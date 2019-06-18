@@ -5,9 +5,20 @@ import numpy as np
 import matplotlib.pyplot as plt
 plt.rcParams['figure.figsize'] = (7,7) # Make the figures a bit bigger
 
-from keras.models import Sequential
-from keras.layers.core import Dense, Flatten, Dropout, Activation
-from keras.layers import Conv2D
+# Assignment rather than import because direct import from within Keras
+# doesn't work in tf 1.8
+Sequential = tf.keras.models.Sequential
+Conv2D = tf.keras.layers.Conv2D
+MaxPooling2D = tf.keras.layers.MaxPooling2D
+Dense = tf.keras.layers.Dense
+Dropout = tf.keras.layers.Dropout
+Activation = tf.keras.layers.Activation
+Flatten = tf.keras.layers.Flatten
+KerasModel = tf.keras.models.Model
+
+#from keras.models import Sequential
+#from keras.layers.core import Dense, Flatten, Dropout, Activation
+#from keras.layers import Conv2D, MaxPooling2D
 from keras.utils import np_utils
 from keras import backend
 from tensorflow.keras.optimizers import Adam
@@ -44,19 +55,19 @@ def load_images_from_folder(folder, maxImg=None):
   # Return images
   return images
 
-turnRight = load_images_from_folder('../../MLDatasets/MLdatasets/GTSRB Dataset/33', 1000)
+turnRight = load_images_from_folder('../../MLDatasets/MLdatasets/GTSRB Dataset/33', 10000)
 print("shape of original turnRight", turnRight.shape)
-turnLeft = load_images_from_folder('../../MLDatasets/MLdatasets/GTSRB Dataset/34', 1000)
+turnLeft = load_images_from_folder('../../MLDatasets/MLdatasets/GTSRB Dataset/34', 10000)
 print("shape of original turnLeft", turnLeft.shape)
-goStraight = load_images_from_folder('../../MLDatasets/MLdatasets/GTSRB Dataset/35', 1000)
+goStraight = load_images_from_folder('../../MLDatasets/MLdatasets/GTSRB Dataset/35', 10000)
 print("shape of original goStraight", goStraight.shape)
 
 np.random.shuffle(turnRight)
-turnRight1  = turnRight[:1000]
+turnRight1  = turnRight[:10000]
 np.random.shuffle(turnLeft)
-turnLeft1   = turnLeft[:1000]
+turnLeft1   = turnLeft[:10000]
 np.random.shuffle(goStraight)
-goStraight1 = goStraight[:1000]
+goStraight1 = goStraight[:10000]
 
 '''
 CREATE Training and Test Data
@@ -92,7 +103,7 @@ CREATE Model
 FLAGS = flags.FLAGS
 
 TRAIN_FRAC = 0.85
-NB_EPOCHS = 6
+NB_EPOCHS = 25
 BATCH_SIZE = 128
 LEARNING_RATE = .001
 TRAIN_DIR = 'train_dir'
@@ -100,14 +111,38 @@ FILENAME = 'turnDirTest.ckpt'
 LOAD_MODEL = False
 
 # Define TF model graph
+'''
 model = cnn_model(img_rows=img_rows, img_cols=img_cols,
                   channels=nchannels, nb_filters=64,
                   nb_classes=nb_classes)
 #compile model using accuracy to measure model performance
-opt = Adam(lr=0.001, beta_1=0.9, beta_2=0.999, epsilon=None, decay=0.0, amsgrad=False)
-#sgd = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
-model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+opt = Adam(lr=0.01, beta_1=0.9, beta_2=0.999, epsilon=None, decay=0.0, amsgrad=False)
+sgd = SGD(lr=0.0001, decay=1e-6, momentum=0.9, nesterov=True)
+model.compile(optimizer=opt, loss='categorical_crossentropy', metrics=['accuracy'])
+'''
+model = Sequential()
+# input: 100x100 images with 3 channels -> (100, 100, 3) tensors.
+# this applies 32 convolution filters of size 3x3 each.
+model.add(Conv2D(32, (5, 5), activation='relu', input_shape=(img_rows, img_cols, nchannels)))
+model.add(Conv2D(32, (5, 5), activation='relu'))
+model.add(MaxPooling2D(pool_size=(2, 2)))
+model.add(Dropout(0.25))
 
+model.add(Conv2D(64, (3, 3), activation='relu'))
+model.add(Conv2D(64, (3, 3), activation='relu'))
+model.add(MaxPooling2D(pool_size=(2, 2)))
+model.add(Dropout(0.25))
+
+model.add(Flatten())
+model.add(Dense(256, activation='relu'))
+model.add(Dropout(0.5))
+model.add(Dense(nb_classes, activation='softmax'))
+
+opt = Adam(lr=0.0000001, beta_1=0.9, beta_2=0.999, epsilon=None, decay=1e-6, amsgrad=False)
+sgd = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
+model.compile(optimizer=opt, loss='categorical_crossentropy', metrics=['accuracy'])
+'''
+'''
 #train the model
 model.fit(x_train, y_train, validation_data=(x_test, y_test), epochs=NB_EPOCHS)
 
@@ -118,8 +153,9 @@ print(y_test[:4])
 
 # evaluate the model
 scores = model.evaluate(x_test, y_test, verbose=0)
-print("%s: %.2f%%" % (model.metrics_names[1], scores[1]*100))
-
+print("%s Test: %.2f%%" % (model.metrics_names[1], scores[1]*100))
+scores = model.evaluate(x_train, y_train, verbose=0)
+print("%s Train: %.2f%%" % (model.metrics_names[1], scores[1]*100))
 # save model and architecture to single file
 model.save("model.h5")
 print("Saved model to disk")
