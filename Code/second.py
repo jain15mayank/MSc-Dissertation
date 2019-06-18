@@ -44,11 +44,11 @@ def load_images_from_folder(folder, maxImg=None):
   # Return images
   return images
 
-turnRight = load_images_from_folder('../../MLdatasets/GTSRBdataset/33', 1000)
+turnRight = load_images_from_folder('../../MLDatasets/MLdatasets/GTSRB Dataset/33', 1000)
 print("shape of original turnRight", turnRight.shape)
-turnLeft = load_images_from_folder('../../MLdatasets/GTSRBdataset/34', 1000)
+turnLeft = load_images_from_folder('../../MLDatasets/MLdatasets/GTSRB Dataset/34', 1000)
 print("shape of original turnLeft", turnLeft.shape)
-goStraight = load_images_from_folder('../../MLdatasets/GTSRBdataset/35', 1000)
+goStraight = load_images_from_folder('../../MLDatasets/MLdatasets/GTSRB Dataset/35', 1000)
 print("shape of original goStraight", goStraight.shape)
 
 np.random.shuffle(turnRight)
