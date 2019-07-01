@@ -42,19 +42,23 @@ def load_images_from_folder(folder, maxImg=None):
   # Return images
   return images
 
-turnRight = load_images_from_folder('../../MLdatasets/GTSRB Dataset/33', 1000)
+#folder = '../../MLdatasets/GTSRB Dataset/'
+folder = 'splattedImages/'
+#folder = '../GTSRB Dataset/categorized&cropped_NA/'
+
+turnRight = load_images_from_folder(folder + '33', 2000)
 print("shape of original turnRight", turnRight.shape)
-turnLeft = load_images_from_folder('../../MLdatasets/GTSRB Dataset/34', 1000)
+turnLeft = load_images_from_folder(folder + '34', 2000)
 print("shape of original turnLeft", turnLeft.shape)
-goStraight = load_images_from_folder('../../MLdatasets/GTSRB Dataset/35', 1000)
+goStraight = load_images_from_folder(folder + '35', 2000)
 print("shape of original goStraight", goStraight.shape)
 
 np.random.shuffle(turnRight)
-turnRight1  = turnRight[:1000]
+turnRight1  = turnRight[:]
 np.random.shuffle(turnLeft)
-turnLeft1   = turnLeft[:1000]
+turnLeft1   = turnLeft[:]
 np.random.shuffle(goStraight)
-goStraight1 = goStraight[:1000]
+goStraight1 = goStraight[:]
 
 '''
 CREATE Training and Test Data
