@@ -26,6 +26,7 @@ from tensorflow.keras.optimizers import SGD
 from tensorflow.python.platform import app
 from tensorflow.python.platform import flags
 from cleverhans_utils_keras import cnn_model, KerasModelWrapper
+from keras.callbacks import EarlyStopping
 
 '''
 LOAD DATA
@@ -92,7 +93,7 @@ y_test = np.zeros((x_test.shape[0], 3))
 y_test[0:turnLeft.shape[0], 0] = 1
 y_test[turnLeft.shape[0]:turnRight.shape[0], 1] = 1
 y_test[turnRight.shape[0]:, 2] = 1
-
+shuffle_in_unison(x_test, y_test)
 '''
 CREATE Model
 '''
@@ -103,9 +104,9 @@ nb_classes = y_train.shape[1]
 FLAGS = flags.FLAGS
 
 TRAIN_FRAC = 0.85
-NB_EPOCHS = 25
+NB_EPOCHS = 75
 BATCH_SIZE = 128
-LEARNING_RATE = .0000001
+LEARNING_RATE = .00000001
 TRAIN_DIR = 'train_dir'
 FILENAME = 'turnDirTest.ckpt'
 LOAD_MODEL = False
@@ -144,7 +145,9 @@ model.compile(optimizer=opt, loss='categorical_crossentropy', metrics=['accuracy
 '''
 '''
 #train the model
-model.fit(x_train, y_train, validation_data=(x_test, y_test), epochs=NB_EPOCHS)
+es = EarlyStopping(monitor='val_loss', mode='min', verbose=1, patience=5)
+
+model.fit(x_train, y_train, validation_data=(x_test, y_test), epochs=NB_EPOCHS, callbacks=[es])
 
 #predict first 4 images in the test set
 print(model.predict(x_test[:4]))
