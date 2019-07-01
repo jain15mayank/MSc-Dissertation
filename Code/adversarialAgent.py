@@ -131,10 +131,17 @@ print("shape of original turnLeft", turnLeft.shape)
 goStraight = load_images_from_folder(folder + '35')
 print("shape of original goStraight", goStraight.shape)
 
-testImgs = []
+outputFolder = "CorrectlyClassifiedImages/"
+#testImgs = []
+i = 0
 for img in turnRight:
     if predictModelMudSplat(np.expand_dims(img, axis=0), 1, 0, 'model.h5')[0] == 2:
-        testImgs.append((img, 1, 0))
+        #testImgs.append((img, 1, 0))
+        cv2.imwrite(outputFolder+'33/'+str(i)+'.png', img)
+        i+=1
+i = 0
 for img in turnLeft:
     if predictModelMudSplat(np.expand_dims(img, axis=0), 0, 1, 'model.h5')[0] == 2:
-        testImgs.append((img, 0, 1))
+        #testImgs.append((img, 0, 1))
+        cv2.imwrite(outputFolder+'33/'+str(i)+'.png', img)
+        i+=1
