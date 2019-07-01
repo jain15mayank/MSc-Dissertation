@@ -106,7 +106,7 @@ FLAGS = flags.FLAGS
 TRAIN_FRAC = 0.85
 NB_EPOCHS = 75
 BATCH_SIZE = 128
-LEARNING_RATE = .00000001
+LEARNING_RATE = .0000001
 TRAIN_DIR = 'train_dir'
 FILENAME = 'turnDirTest.ckpt'
 LOAD_MODEL = False
@@ -145,7 +145,7 @@ model.compile(optimizer=opt, loss='categorical_crossentropy', metrics=['accuracy
 '''
 '''
 #train the model
-es = EarlyStopping(monitor='val_loss', mode='min', verbose=1, patience=5)
+es = EarlyStopping(monitor='val_loss', mode='min', verbose=1, patience=15)
 
 model.fit(x_train, y_train, validation_data=(x_test, y_test), epochs=NB_EPOCHS, callbacks=[es])
 
@@ -169,7 +169,7 @@ y_temp[:,0] = 1
 scores = model.evaluate(turnLeft, y_temp, verbose=0)
 print("%s Test (Turn Left): %.2f%%" % (model.metrics_names[1], scores[1]*100))
 y_temp = np.zeros((goStraight.shape[0], 3))
-y_temp[:,0] = 1
+y_temp[:,2] = 1
 scores = model.evaluate(goStraight, y_temp, verbose=0)
 print("%s Test (Go Straight): %.2f%%" % (model.metrics_names[1], scores[1]*100))
 # save model and architecture to single file
