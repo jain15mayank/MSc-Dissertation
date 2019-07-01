@@ -140,7 +140,7 @@ def binaryCNNsetup(train_set_frac=TRAIN_FRAC, nb_epochs=NB_EPOCHS,
     # assert X_test.shape[0] == test_end - test_start, X_test.shape
     print('Test accuracy on legitimate examples: %0.4f' % acc)
   
-  # Train an MNIST model
+  # Train the model
   train_params = {
       'nb_epochs': nb_epochs,
       'batch_size': batch_size,
