@@ -55,57 +55,57 @@ def load_images_from_folder(folder, maxImg=None):
   # Return images
   return images
 
-turnRight = load_images_from_folder('../../MLDatasets/MLdatasets/GTSRB Dataset/33', 10000)
-print("shape of original turnRight", turnRight.shape)
-turnLeft = load_images_from_folder('../../MLDatasets/MLdatasets/GTSRB Dataset/34', 10000)
-print("shape of original turnLeft", turnLeft.shape)
-goStraight = load_images_from_folder('../../MLDatasets/MLdatasets/GTSRB Dataset/35', 10000)
-print("shape of original goStraight", goStraight.shape)
-
-np.random.shuffle(turnRight)
-turnRight1  = turnRight[:10000]
-np.random.shuffle(turnLeft)
-turnLeft1   = turnLeft[:10000]
-np.random.shuffle(goStraight)
-goStraight1 = goStraight[:10000]
-
 '''
 CREATE Training and Test Data
 '''
-# Get Complete Dataset
-x_complete = np.concatenate((turnLeft1, turnRight1, goStraight1))
-y_complete = np.zeros((x_complete.shape[0], 3))
-y_complete[0:turnLeft1.shape[0], 0] = 1
-y_complete[turnLeft1.shape[0]:turnRight1.shape[0], 1] = 1
-y_complete[turnRight1.shape[0]:, 2] = 1
+# Get Train Dataset
+turnRight = load_images_from_folder('../GTSRB Dataset/categorized&cropped - Training/33', 8300)
+print("shape of original turnRight", turnRight.shape)
+turnLeft = load_images_from_folder('../GTSRB Dataset/categorized&cropped - Training/34', 8300)
+print("shape of original turnLeft", turnLeft.shape)
+goStraight = load_images_from_folder('../GTSRB Dataset/categorized&cropped - Training/35', 8300)
+print("shape of original goStraight", goStraight.shape)
+
+x_train = np.concatenate((turnLeft, turnRight, goStraight))
+y_train = np.zeros((x_train.shape[0], 3))
+y_train[0:turnLeft.shape[0], 0] = 1
+y_train[turnLeft.shape[0]:turnRight.shape[0], 1] = 1
+y_train[turnRight.shape[0]:, 2] = 1
 
 def shuffle_in_unison(a, b):
   rng_state = np.random.get_state()
   np.random.shuffle(a)
   np.random.set_state(rng_state)
   np.random.shuffle(b)
-shuffle_in_unison(x_complete, y_complete)
+shuffle_in_unison(x_train, y_train)
 
-# Get Test and Train Dataset
-len_train = int(round(0.85*y_complete.shape[0]))
-x_train = x_complete[0:len_train]
-y_train = y_complete[0:len_train]
-x_test  = x_complete[len_train:]
-y_test  = y_complete[len_train:]
+# Get Test Dataset
+turnRight = load_images_from_folder('../GTSRB Dataset/categorized&cropped_NA - Test/33')
+print("shape of original turnRight", turnRight.shape)
+turnLeft = load_images_from_folder('../GTSRB Dataset/categorized&cropped_NA - Test/34')
+print("shape of original turnLeft", turnLeft.shape)
+goStraight = load_images_from_folder('../GTSRB Dataset/categorized&cropped_NA - Test/35')
+print("shape of original goStraight", goStraight.shape)
 
-# Obtain Image Parameters
-img_rows, img_cols, nchannels = x_train.shape[1:4]
-nb_classes = y_train.shape[1]
+x_test = np.concatenate((turnLeft, turnRight, goStraight))
+y_test = np.zeros((x_test.shape[0], 3))
+y_test[0:turnLeft.shape[0], 0] = 1
+y_test[turnLeft.shape[0]:turnRight.shape[0], 1] = 1
+y_test[turnRight.shape[0]:, 2] = 1
 
 '''
 CREATE Model
 '''
+# Obtain Image Parameters
+img_rows, img_cols, nchannels = x_train.shape[1:4]
+nb_classes = y_train.shape[1]
+
 FLAGS = flags.FLAGS
 
 TRAIN_FRAC = 0.85
 NB_EPOCHS = 25
 BATCH_SIZE = 128
-LEARNING_RATE = .001
+LEARNING_RATE = .0000001
 TRAIN_DIR = 'train_dir'
 FILENAME = 'turnDirTest.ckpt'
 LOAD_MODEL = False
@@ -138,8 +138,8 @@ model.add(Dense(256, activation='relu'))
 model.add(Dropout(0.5))
 model.add(Dense(nb_classes, activation='softmax'))
 
-opt = Adam(lr=0.0000001, beta_1=0.9, beta_2=0.999, epsilon=None, decay=1e-6, amsgrad=False)
-sgd = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
+opt = Adam(lr=LEARNING_RATE, beta_1=0.9, beta_2=0.999, epsilon=None, decay=1e-6, amsgrad=False)
+#sgd = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
 model.compile(optimizer=opt, loss='categorical_crossentropy', metrics=['accuracy'])
 '''
 '''
@@ -156,6 +156,19 @@ scores = model.evaluate(x_test, y_test, verbose=0)
 print("%s Test: %.2f%%" % (model.metrics_names[1], scores[1]*100))
 scores = model.evaluate(x_train, y_train, verbose=0)
 print("%s Train: %.2f%%" % (model.metrics_names[1], scores[1]*100))
+
+y_temp = np.zeros((turnRight.shape[0], 3))
+y_temp[:,1] = 1
+scores = model.evaluate(turnRight, y_temp, verbose=0)
+print("%s Test (Turn Right): %.2f%%" % (model.metrics_names[1], scores[1]*100))
+y_temp = np.zeros((turnLeft.shape[0], 3))
+y_temp[:,0] = 1
+scores = model.evaluate(turnLeft, y_temp, verbose=0)
+print("%s Test (Turn Left): %.2f%%" % (model.metrics_names[1], scores[1]*100))
+y_temp = np.zeros((goStraight.shape[0], 3))
+y_temp[:,0] = 1
+scores = model.evaluate(goStraight, y_temp, verbose=0)
+print("%s Test (Go Straight): %.2f%%" % (model.metrics_names[1], scores[1]*100))
 # save model and architecture to single file
 model.save("model.h5")
 print("Saved model to disk")
