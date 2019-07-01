@@ -46,11 +46,11 @@ def load_images_from_folder(folder, maxImg=None):
 folder = 'splattedImages/'
 #folder = '../GTSRB Dataset/categorized&cropped_NA/'
 
-turnRight = load_images_from_folder(folder + '33', 2000)
+turnRight = load_images_from_folder(folder + '33')
 print("shape of original turnRight", turnRight.shape)
-turnLeft = load_images_from_folder(folder + '34', 2000)
+turnLeft = load_images_from_folder(folder + '34')
 print("shape of original turnLeft", turnLeft.shape)
-goStraight = load_images_from_folder(folder + '35', 2000)
+goStraight = load_images_from_folder(folder + '35')
 print("shape of original goStraight", goStraight.shape)
 
 np.random.shuffle(turnRight)

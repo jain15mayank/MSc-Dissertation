@@ -52,7 +52,7 @@ def hist_match(source, template):
     return interp_t_values[bin_idx].reshape(oldshape)
 
 def addMudSplat(originalImage, mudSplatRef, SplatOffsetX = None,
-                SplatOffsetY = None, scaleParam = 10):
+                SplatOffsetY = None, scaleParam = 10, rotateParam = None):
     """
     Adds a mud splat on the original image at specified location. If location
     is not specified, places it arbitrarily near the center of original image.
@@ -73,6 +73,8 @@ def addMudSplat(originalImage, mudSplatRef, SplatOffsetX = None,
             size of original image (e.g.: if scaleParam==100: the splat will be
             almost equal to the size of original image); values are by default
             clipped between 0 and 100
+        rotateParam: scalar (float) (0-360)
+            Specifies how much to rotate the original image by (in degrees)
     Returns:
     -----------
         muddyImage: np.ndarray
@@ -91,6 +93,10 @@ def addMudSplat(originalImage, mudSplatRef, SplatOffsetX = None,
     else:
         newSplat = cv2.resize(mudSplatRef,
                    (sizeSplat, int(mudSplatRef.shape[1]*sizeSplat/mudSplatRef.shape[0])))
+    if rotateParam is not None:
+        rows,cols = newSplat.shape
+        M = cv2.getRotationMatrix2D((cols/2,rows/2), rotateParam, 1)
+        newSplat = cv2.warpAffine(newSplat, M, (cols,rows))
     # Perform histogram matching of newSplat w.r.t. originalImage - only on V
     # channel in HSV format
     alpha_newSplat = newSplat[:,:,3]
