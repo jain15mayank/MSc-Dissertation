@@ -94,7 +94,7 @@ def addMudSplat(originalImage, mudSplatRef, SplatOffsetX = None,
         newSplat = cv2.resize(mudSplatRef,
                    (sizeSplat, int(mudSplatRef.shape[1]*sizeSplat/mudSplatRef.shape[0])))
     if rotateParam is not None:
-        rows,cols = newSplat.shape
+        rows,cols,nChannels = newSplat.shape
         M = cv2.getRotationMatrix2D((cols/2,rows/2), rotateParam, 1)
         newSplat = cv2.warpAffine(newSplat, M, (cols,rows))
     # Perform histogram matching of newSplat w.r.t. originalImage - only on V
@@ -120,8 +120,8 @@ def addMudSplat(originalImage, mudSplatRef, SplatOffsetX = None,
     # Apply Gaussian Blur to Mud Splat
     testSplat = cv2.GaussianBlur(testSplat, (3, 3), sigma)
     # Apply alpha-channel adjustments and overlay mudSplat on originalImage
-    y1, y2 = SplatOffsetY, SplatOffsetY + testSplat.shape[0]
-    x1, x2 = SplatOffsetX, SplatOffsetX + testSplat.shape[1]
+    y1, y2 = int(SplatOffsetY), int(SplatOffsetY) + testSplat.shape[0]
+    x1, x2 = int(SplatOffsetX), int(SplatOffsetX) + testSplat.shape[1]
     alpha_s = testSplat[:, :, 3]/255
     alpha_l = 1.0 - alpha_s
     muddyImage = copy.deepcopy(originalImage)
