@@ -2,9 +2,9 @@ import os
 import tensorflow as tf
 import cv2
 import numpy as np
-import matplotlib.pyplot as plt
+'''import matplotlib.pyplot as plt
 plt.rcParams['figure.figsize'] = (7,7) # Make the figures a bit bigger
-
+'''
 # Assignment rather than import because direct import from within Keras
 # doesn't work in tf 1.8
 Sequential = tf.keras.models.Sequential
