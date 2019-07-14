@@ -219,7 +219,7 @@ for num in numSplats:
         lb = [0.2*args[0][0].shape[0], 0.2*args[0][0].shape[1], 15, 0]
         ub = [0.6*args[0][0].shape[0], 0.6*args[0][0].shape[1], 40, 360]
         q_opt, f_opt = pso(pso_objective_1, lb, ub, args=args,
-                           swarmsize=100, omega=0.5, phip=0.5, phig=0.5,
+                           swarmsize=100, omega=0.8, phip=2.0, phig=2.0,
                            maxiter=3000, minstep=1e-8, debug=True)
         print(q_opt)
         print(f_opt)
