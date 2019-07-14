@@ -148,6 +148,7 @@ for img in turnRight:
         testImgs.append((img, 1, 0))
         cv2.imwrite(outputFolder+'33/'+str(i)+'.png', img)
         i+=1
+print('here')
 
 i = 0
 if not os.path.exists(outputFolder+'/34/'):
@@ -157,6 +158,18 @@ for img in turnLeft:
         testImgs.append((img, 0, 1))
         cv2.imwrite(outputFolder+'34/'+str(i)+'.png', img)
         i+=1
+print('here 2')
+
+'''
+
+folder = "Correctly Classified Images/"
+#turnRight = load_images_from_folder(folder + '33')
+#print("shape of original turnRight", turnRight.shape)
+turnLeft = load_images_from_folder(folder + '34')
+print("shape of original turnLeft", turnLeft.shape)
+#testImgs = np.concatenate((turnRight, turnLeft), axis=0)
+testImgs = turnLeft
+'''
 
 outputFolder = "Misclassified Images"
 def pso_objective_1(features, *args):
