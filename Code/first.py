@@ -2,9 +2,9 @@ import os
 import tensorflow as tf
 import cv2
 import numpy as np
-import matplotlib.pyplot as plt
+'''import matplotlib.pyplot as plt
 plt.rcParams['figure.figsize'] = (7,7) # Make the figures a bit bigger
-
+'''
 from keras.models import Sequential
 from keras.layers.core import Dense, Dropout, Activation
 from keras.utils import np_utils
@@ -88,14 +88,14 @@ def binaryCNNsetup(train_set_frac=TRAIN_FRAC, nb_epochs=NB_EPOCHS,
   backend.set_learning_phase(0)
   # Object used to keep track of (and return) key accuracies
   report = AccuracyReport()
-  
+
   # Set TF random seed to improve reproducibility
   tf.set_random_seed(1234)
-  
+
   # Create TF session and set as Keras backend session
   sess = tf.Session()
   backend.set_session(sess)
-  
+
   # Get Complete Dataset
   x_complete = np.concatenate((turnLeft1, turnRight1, goStraight1))
   y_complete = np.zeros((x_complete.shape[0], 3))
@@ -109,29 +109,29 @@ def binaryCNNsetup(train_set_frac=TRAIN_FRAC, nb_epochs=NB_EPOCHS,
     np.random.set_state(rng_state)
     np.random.shuffle(b)
   shuffle_in_unison(x_complete, y_complete)
-  
+
   # Get Test and Train Dataset
   len_train = int(round(train_set_frac*y_complete.shape[0]))
   x_train = x_complete[0:len_train]
   y_train = y_complete[0:len_train]
   x_test  = x_complete[len_train:]
   y_test  = y_complete[len_train:]
-  
+
   # Obtain Image Parameters
   img_rows, img_cols, nchannels = x_train.shape[1:4]
   nb_classes = y_train.shape[1]
-  
+
   # Define input TF placeholder
   x = tf.placeholder(tf.float32, shape=(None, img_rows, img_cols, nchannels))
   y = tf.placeholder(tf.float32, shape=(None, nb_classes))
-  
+
   # Define TF model graph
   model = cnn_model(img_rows=img_rows, img_cols=img_cols,
                     channels=nchannels, nb_filters=64,
                     nb_classes=nb_classes)
   preds = model(x)
   print("Defined TensorFlow model graph.")
-  
+
   def evaluate():
     # Evaluate the accuracy of the model on test examples
     eval_params = {'batch_size': batch_size}
@@ -139,7 +139,7 @@ def binaryCNNsetup(train_set_frac=TRAIN_FRAC, nb_epochs=NB_EPOCHS,
     report.clean_train_clean_eval = acc
     # assert X_test.shape[0] == test_end - test_start, X_test.shape
     print('Test accuracy on legitimate examples: %0.4f' % acc)
-  
+
   # Train the model
   train_params = {
       'nb_epochs': nb_epochs,
@@ -148,16 +148,16 @@ def binaryCNNsetup(train_set_frac=TRAIN_FRAC, nb_epochs=NB_EPOCHS,
       'train_dir': train_dir,
       'filename': filename
   }
-  
+
   rng = np.random.RandomState([2017, 8, 30])
   if not os.path.exists(train_dir):
     os.mkdir(train_dir)
-  
+
   ckpt = tf.train.get_checkpoint_state(train_dir)
   print(train_dir, ckpt)
   ckpt_path = False if ckpt is None else ckpt.model_checkpoint_path
   wrap = KerasModelWrapper(model)
-  
+
   if load_model and ckpt_path:
     saver = tf.train.Saver()
     print(ckpt_path)
@@ -172,13 +172,13 @@ def binaryCNNsetup(train_set_frac=TRAIN_FRAC, nb_epochs=NB_EPOCHS,
           args=train_params, rng=rng)
     save_path = saver.save(sess, "/train_dir/trainedModel.ckpt")
     print("Model saved in path: %s" % save_path)
-  
+
   # Calculate training error
   if testing:
     eval_params = {'batch_size': batch_size}
     acc = model_eval(sess, x, y, preds, x_train, y_train, args=eval_params)
     report.train_clean_train_clean_eval = acc
-  
+
   return report
 
 def main(argv=None):
