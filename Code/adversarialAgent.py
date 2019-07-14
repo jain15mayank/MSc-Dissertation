@@ -182,9 +182,9 @@ testImgs = turnLeft
 outputFolder = "Misclassified Images"
 def pso_objective_1(features, *args):
     xOffset, yOffset, scale, rotate = features
-    imgData, mudImgPath = args
+    imgData, oriClass, tarClass, mudImgPath = args
     mudSplatObj = mudSplat(mudImgPath, xOffset, yOffset, scale, rotate)
-    return predictModelMudSplat(imgData[0], imgData[1], imgData[2], model,
+    return predictModelMudSplat(imgData, oriClass, tarClass, model,
                                 [mudSplatObj])[0]
 '''
 numSplats = [1]
@@ -213,7 +213,9 @@ for num in numSplats:
         testTLimgs = np.zeros(np.append(len(testTurnLeftImgs), testTurnLeftImgs[0][0].shape))
         for j, img in enumerate(testTurnLeftImgs):
             testTLimgs[j, ...] = img[0]
-        args = (np.float32(testTLimgs), mudImgPath)
+        oriClass = 0
+        tarClass = 1
+        args = (np.float32(testTLimgs), oriClass, tarClass, mudImgPath)
         lb = [0.2*args[0][0].shape[0], 0.2*args[0][0].shape[1], 15, 0]
         ub = [0.6*args[0][0].shape[0], 0.6*args[0][0].shape[1], 40, 360]
         q_opt, f_opt = pso(pso_objective_1, lb, ub, args=args,
