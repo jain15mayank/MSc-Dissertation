@@ -66,7 +66,7 @@ class mudSplat:
         self.scale   = scale
         self.rotate  = rotate
 
-def predictModelMudSplat(originalImage, originalClass, targetClass,
+def  predictModelMudSplat(originalImages, originalClass, targetClass,
                          model, mudSplatObjects = None):
     """
     Adds a mud splat on the original image according to the specified feature
@@ -74,7 +74,7 @@ def predictModelMudSplat(originalImage, originalClass, targetClass,
 
     Arguments:
     -----------
-        originalImage: np.ndarray
+        originalImages: np.ndarray
             Original Image (without any perturbations)
         originalClass: scalar (int) {0,1,2}
             Original Class label specified as follows:
@@ -93,35 +93,42 @@ def predictModelMudSplat(originalImage, originalClass, targetClass,
             (If None: Predict the class and correctness of original image.)
     Returns:
     -----------
-        predClass: Classify prediction w.r.t. original and target classes:
-            2   : if predicted class == original class (correct prediction)
-            0   : if predicted class == target class (incorrect prediction - 
-                                                      target matched)
-            1   : if predicted class == any other class (incorrect prediction - 
-                                                         target mismatched)
+        predScore: Classify predictions w.r.t. original and target classes and
+            give score according to the following scheme:
+                2   : if predicted class == original class (correct prediction)
+                0   : if predicted class == target class (incorrect prediction - 
+                                                          target matched)
+                1   : if predicted class == any other class (incorrect prediction - 
+                                                             target mismatched)
+            The scores for all images are then added to produce final score
         predOutput: list of predictions
             The transformed output image with mud-splat on it
     """
-    newImage = deepcopy(originalImage)
+    newImages = deepcopy(originalImages)
+    if len(newImages.shape) == 3:   # Only 1 image is provided
+        newImages = np.expand_dims(newImages, axis=0)
     if mudSplatObjects is not None:
+        numSplattedImages = newImages.shape[0]*len(mudSplatObjects)
+        splattedImages = np.zeros(np.append(numSplattedImages,newImages.shape[1:]))
         for mudSplatObj in mudSplatObjects:
             mudSplat = cv2.imread(mudSplatObj.imgPath, cv2.IMREAD_UNCHANGED)
-            newImage = addMudSplat(newImage[0], mudSplat, mudSplatObj.xOffset,
-                                   mudSplatObj.yOffset, mudSplatObj.scale,
-                                   mudSplatObj.rotate)
+            for i, img in enumerate(newImages):
+                splattedImages[i,...] = addMudSplat(img, mudSplat, mudSplatObj.xOffset,
+                                                    mudSplatObj.yOffset, mudSplatObj.scale,
+                                                    mudSplatObj.rotate)
+        predOutput = model.predict(splattedImages)
+    else:
+        predOutput = model.predict(newImages)
     
-    if len(newImage.shape) == 3:
-        predOutput = model.predict(np.expand_dims(newImage, axis=0))
-    else:
-        predOutput = model.predict(newImage)
-    #print(predOutput)
-    if np.argmax(predOutput) == originalClass:
-        predClass = 2
-    elif np.argmax(predOutput) == targetClass:
-        predClass = 0
-    else:
-        predClass = 1
-    return predClass, predOutput, predOutput[0][originalClass]
+    predScore = 0
+    for outputs in predOutput:
+        if np.any(np.argmax(outputs) == originalClass):
+            predScore += 2
+        elif np.any(np.argmax(outputs) == targetClass):
+            predScore += 0
+        else:
+            predScore += 1
+    return predScore, predOutput
 
 '''
 MAIN CODE
@@ -138,25 +145,26 @@ print("shape of original goStraight", goStraight.shape)
 with CustomObjectScope({'GlorotUniform': glorot_uniform()}):
     model = load_model('model.h5')
 
-testImgs = []
+testTurnRightImgs = []
 outputFolder = "Correctly Classified Images"
 i = 0
 if not os.path.exists(outputFolder+'/33/'):
     os.makedirs(outputFolder+'/33/')
 for img in turnRight:
     if predictModelMudSplat(np.expand_dims(img, axis=0), 1, 0, model)[0] == 2:
-        testImgs.append((img, 1, 0))
-        cv2.imwrite(outputFolder+'33/'+str(i)+'.png', img)
+        testTurnRightImgs.append((img, 1, 0))
+        cv2.imwrite(outputFolder+'/33/'+str(i)+'.png', img)
         i+=1
 print('here')
 
+testTurnLeftImgs = []
 i = 0
 if not os.path.exists(outputFolder+'/34/'):
     os.makedirs(outputFolder+'/34/')
 for img in turnLeft:
     if predictModelMudSplat(np.expand_dims(img, axis=0), 0, 1, model)[0] == 2:
-        testImgs.append((img, 0, 1))
-        cv2.imwrite(outputFolder+'34/'+str(i)+'.png', img)
+        testTurnLeftImgs.append((img, 0, 1))
+        cv2.imwrite(outputFolder+'/34/'+str(i)+'.png', img)
         i+=1
 print('here 2')
 
@@ -176,18 +184,41 @@ def pso_objective_1(features, *args):
     xOffset, yOffset, scale, rotate = features
     imgData, mudImgPath = args
     mudSplatObj = mudSplat(mudImgPath, xOffset, yOffset, scale, rotate)
-    return np.log(predictModelMudSplat(np.expand_dims(imgData[0], axis=0),
-                                       imgData[1], imgData[2], model,
-                                       [mudSplatObj])[2])
+    return predictModelMudSplat(imgData[0], imgData[1], imgData[2], model,
+                                [mudSplatObj])[0]
+'''
 numSplats = [1]
+i = 0
 for imgData in testImgs:
     for num in numSplats:
         for mudImgPath in ['AdversaryImages/mudSplat1.png', 'AdversaryImages/mudSplat2.png']:
             args = (imgData, mudImgPath)
             lb = [0.2*args[0][0].shape[0], 0.2*args[0][0].shape[1], 15, 0]
             ub = [0.6*args[0][0].shape[0], 0.6*args[0][0].shape[1], 40, 360]
-            q_opt, f_opt = pso(pso_objective_1, lb, ub, args=args)
+            q_opt, f_opt = pso(pso_objective_1, lb, ub, args=args,
+                               swarmsize=100, omega=0.5, phip=0.5, phig=0.5,
+                               maxiter=100, minstep=1e-8)
             if f_opt<np.log(0.5):
+                img = addMudSplat(imgData[0], cv2.imread(mudImgPath, cv2.IMREAD_UNCHANGED),
+                                  q_opt[0], q_opt[1], q_opt[2], q_opt[3])
+                cv2.imwrite(outputFolder+'/'+str(i)+'.png', img)
+                i+=1
                 print(q_opt)
                 print('Hooray!')
-                
+'''
+numSplats = [1]
+i = 0
+for num in numSplats:
+    for mudImgPath in ['AdversaryImages/mudSplat1.png', 'AdversaryImages/mudSplat2.png']:
+        testTLimgs = np.zeros(np.append(len(testTurnLeftImgs), testTurnLeftImgs[0][0].shape))
+        for j, img in enumerate(testTurnLeftImgs):
+            testTLimgs[j, ...] = img[0]
+        args = (np.float32(testTLimgs), mudImgPath)
+        lb = [0.2*args[0][0].shape[0], 0.2*args[0][0].shape[1], 15, 0]
+        ub = [0.6*args[0][0].shape[0], 0.6*args[0][0].shape[1], 40, 360]
+        q_opt, f_opt = pso(pso_objective_1, lb, ub, args=args,
+                           swarmsize=100, omega=0.5, phip=0.5, phig=0.5,
+                           maxiter=100, minstep=1e-8, debug=True)
+        print(q_opt)
+        print(f_opt)
+        print('Hooray!')
