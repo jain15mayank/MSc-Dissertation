@@ -37,19 +37,28 @@ def load_images_from_folder(folder, maxImg=None):
   # Return images
   return images
 
-images33 = load_images_from_folder(folder+'33')
-#images34 = load_images_from_folder(folder+'34')
+#images33 = load_images_from_folder(folder+'33')
+images34 = load_images_from_folder(folder+'34')
 #images35 = load_images_from_folder(folder+'35')
 
 mudSplat = cv2.imread('AdversaryImages/mudSplat2.png', cv2.IMREAD_UNCHANGED)
 print(mudSplat.shape)
 
-if not os.path.exists('splattedImagesFeatureV/33/'):
-    os.makedirs('splattedImagesFeatureV/33/')
+if not os.path.exists('splattedImagesFeatureV/34/'):
+    os.makedirs('splattedImagesFeatureV/34/')
 m = 0
+i = 20
+j = 50
+k = 40
+l = 230
+for img in images34:
+    cv2.imwrite('splattedImagesFeatureV/34/'+str(m)+'.png', addMudSplat(img, mudSplat, i, j, k, l))
+    m+=1
+'''
 for i in range(2, 62, 5):
     for j in range(2, 62, 5):
         for k in range(15, 42, 5):
             for l in range(0, 360, 50):
                 cv2.imwrite('splattedImagesFeatureV/33/'+str(m)+'.png', addMudSplat(images33[0], mudSplat, int(i*images33[0].shape[0]/100), int(j*images33[0].shape[1]/100), k, l))
                 m+=1
+'''
