@@ -226,7 +226,7 @@ def resnet_v1(input_shape, depth, num_classes=10):
                                  strides=strides,
                                  activation=None,
                                  batch_normalization=False)
-            x = keras.layers.add([x, y])
+            x = tf.keras.layers.add([x, y])
             x = Activation('relu')(x)
         num_filters *= 2
 
