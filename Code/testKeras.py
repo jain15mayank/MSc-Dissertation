@@ -11,7 +11,7 @@ import numpy as np
 import keras
 from keras.utils import np_utils
 from keras import backend
-from tensorflow.keras.optimizers import Adam
+from keras.optimizers import Adam
 from tensorflow.keras.optimizers import SGD
 from tensorflow.python.platform import app
 from tensorflow.python.platform import flags
