@@ -122,7 +122,7 @@ FILENAME = 'turnDirTest.ckpt'
 LOAD_MODEL = False
 
 # Define TF model graph
-model = keras.applications.vgg19.VGG19(include_top=False, weights='imagenet', input_tensor=None, input_shape=(img_rows, img_cols, nchannels), pooling=max, classes=3)
+model = keras.applications.vgg19.VGG19(include_top=False, weights='imagenet', input_tensor=None, input_shape=(img_rows, img_cols, nchannels), pooling=max)
 
 opt = Adam(lr=LEARNING_RATE, beta_1=0.9, beta_2=0.999, epsilon=None, decay=1e-6, amsgrad=False)
 #sgd = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
