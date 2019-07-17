@@ -118,7 +118,7 @@ def addMudSplat(originalImage, mudSplatRef, SplatOffsetX = None,
             temp_wh_half.append(pixel)
     sigma = np.std(temp_wh_half)
     # Apply Gaussian Blur to Mud Splat
-    testSplat = cv2.GaussianBlur(testSplat, (3, 3), sigma)
+    testSplat = cv2.GaussianBlur(testSplat, (5, 5), sigma)
     # Apply alpha-channel adjustments and overlay mudSplat on originalImage
     y1, y2 = int(SplatOffsetY), int(SplatOffsetY) + testSplat.shape[0]
     x1, x2 = int(SplatOffsetX), int(SplatOffsetX) + testSplat.shape[1]

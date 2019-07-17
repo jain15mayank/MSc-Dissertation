@@ -242,3 +242,40 @@ def resnet_v1(input_shape, depth, num_classes=10):
     model = KerasModel(inputs=inputs, outputs=outputs)
     return model
 
+model = resnet_v1((img_rows, img_cols, nchannels), depth=20)
+opt = Adam(lr=LEARNING_RATE, beta_1=0.9, beta_2=0.999, epsilon=None, decay=1e-6, amsgrad=False)
+#sgd = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
+model.compile(optimizer=opt, loss='categorical_crossentropy', metrics=['accuracy'])
+'''
+'''
+#train the model
+es = EarlyStopping(monitor='val_loss', mode='min', verbose=1, patience=15)
+
+model.fit(x_train, y_train, validation_data=(x_test, y_test), epochs=NB_EPOCHS, callbacks=[es])
+
+#predict first 4 images in the test set
+print(model.predict(x_test[:4]))
+#actual results for first 4 images in test set
+print(y_test[:4])
+
+# evaluate the model
+scores = model.evaluate(x_test, y_test, verbose=0)
+print("%s Test: %.2f%%" % (model.metrics_names[1], scores[1]*100))
+scores = model.evaluate(x_train, y_train, verbose=0)
+print("%s Train: %.2f%%" % (model.metrics_names[1], scores[1]*100))
+
+y_temp = np.zeros((turnRight.shape[0], 3))
+y_temp[:,1] = 1
+scores = model.evaluate(turnRight, y_temp, verbose=0)
+print("%s Test (Turn Right): %.2f%%" % (model.metrics_names[1], scores[1]*100))
+y_temp = np.zeros((turnLeft.shape[0], 3))
+y_temp[:,0] = 1
+scores = model.evaluate(turnLeft, y_temp, verbose=0)
+print("%s Test (Turn Left): %.2f%%" % (model.metrics_names[1], scores[1]*100))
+y_temp = np.zeros((goStraight.shape[0], 3))
+y_temp[:,2] = 1
+scores = model.evaluate(goStraight, y_temp, verbose=0)
+print("%s Test (Go Straight): %.2f%%" % (model.metrics_names[1], scores[1]*100))
+# save model and architecture to single file
+model.save("model.h5")
+print("Saved model to disk")
