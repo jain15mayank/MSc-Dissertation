@@ -144,7 +144,7 @@ model = Sequential([
                     Flatten(),
                     Dense(4096, activation='relu'),
                     Dense(4096, activation='relu'),
-                    Dense(1000, activation='softmax')
+                    Dense(nb_classes, activation='softmax')
                     ])
 
 opt = Adam(lr=LEARNING_RATE, beta_1=0.9, beta_2=0.999, epsilon=None, decay=1e-6, amsgrad=False)
