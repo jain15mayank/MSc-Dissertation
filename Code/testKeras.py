@@ -122,7 +122,31 @@ FILENAME = 'turnDirTest.ckpt'
 LOAD_MODEL = False
 
 # Define TF model graph
-model = keras.applications.vgg19.VGG19(include_top=False, weights='imagenet', input_tensor=None, input_shape=(img_rows, img_cols, nchannels), pooling=max)
+#Instantiate an empty model
+model = Sequential([
+                    Conv2D(64, (3, 3), input_shape=(img_rows, img_cols, nchannels), padding='same', activation='relu'),
+                    Conv2D(64, (3, 3), activation='relu', padding='same'),
+                    MaxPooling2D(pool_size=(2, 2), strides=(2, 2)),
+                    Conv2D(128, (3, 3), activation='relu', padding='same'),
+                    Conv2D(128, (3, 3), activation='relu', padding='same',),
+                    MaxPooling2D(pool_size=(2, 2), strides=(2, 2)),
+                    Conv2D(256, (3, 3), activation='relu', padding='same',),
+                    Conv2D(256, (3, 3), activation='relu', padding='same',),
+                    Conv2D(256, (3, 3), activation='relu', padding='same',),
+                    MaxPooling2D(pool_size=(2, 2), strides=(2, 2)),
+                    Conv2D(512, (3, 3), activation='relu', padding='same',),
+                    Conv2D(512, (3, 3), activation='relu', padding='same',),
+                    Conv2D(512, (3, 3), activation='relu', padding='same',),
+                    MaxPooling2D(pool_size=(2, 2), strides=(2, 2)),
+                    Conv2D(512, (3, 3), activation='relu', padding='same',),
+                    Conv2D(512, (3, 3), activation='relu', padding='same',),
+                    Conv2D(512, (3, 3), activation='relu', padding='same',),
+                    MaxPooling2D(pool_size=(2, 2), strides=(2, 2)),
+                    Flatten(),
+                    Dense(4096, activation='relu'),
+                    Dense(4096, activation='relu'),
+                    Dense(1000, activation='softmax')
+                    ])
 
 opt = Adam(lr=LEARNING_RATE, beta_1=0.9, beta_2=0.999, epsilon=None, decay=1e-6, amsgrad=False)
 #sgd = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
