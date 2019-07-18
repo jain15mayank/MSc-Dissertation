@@ -19,9 +19,9 @@ from tensorflow.python.platform import flags
 from cleverhans_utils_keras import cnn_model, KerasModelWrapper
 from tensorflow.keras.callbacks import EarlyStopping
 
-'''import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 plt.rcParams['figure.figsize'] = (7,7) # Make the figures a bit bigger
-'''
+
 # Assignment rather than import because direct import from within Keras
 # doesn't work in tf 1.8
 Sequential = tf.keras.models.Sequential
@@ -256,7 +256,27 @@ model.compile(optimizer=opt, loss='categorical_crossentropy', metrics=['accuracy
 #train the model
 es = EarlyStopping(monitor='val_loss', mode='min', verbose=1, patience=50)
 
-model.fit(x_train, y_train, validation_data=(x_test, y_test), epochs=NB_EPOCHS, callbacks=[es])
+history = model.fit(x_train, y_train, validation_data=(x_test, y_test), epochs=NB_EPOCHS, callbacks=[es])
+
+# Plot training & validation accuracy values
+fig = plt.figure()
+plt.plot(history.history['acc'])
+plt.plot(history.history['val_acc'])
+plt.title('Model accuracy')
+plt.ylabel('Accuracy')
+plt.xlabel('Epoch')
+plt.legend(['Train', 'Test'], loc='upper left')
+fig.savefig('acc_plot.png')
+
+# Plot training & validation loss values
+fig = plt.figure()
+plt.plot(history.history['loss'])
+plt.plot(history.history['val_loss'])
+plt.title('Model loss')
+plt.ylabel('Loss')
+plt.xlabel('Epoch')
+plt.legend(['Train', 'Test'], loc='upper left')
+fig.savefig('loss_plot.png')
 
 #predict first 4 images in the test set
 print(model.predict(x_test[:4]))
