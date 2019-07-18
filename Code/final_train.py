@@ -242,7 +242,7 @@ def resnet_v1(input_shape, depth, num_classes=10):
     model = KerasModel(inputs=inputs, outputs=outputs)
     return model
 
-model = resnet_v1((img_rows, img_cols, nchannels), depth=20, nb_classes)
+model = resnet_v1((img_rows, img_cols, nchannels), depth=20, num_classes=nb_classes)
 opt = Adam(lr=LEARNING_RATE, beta_1=0.9, beta_2=0.999, epsilon=None, decay=1e-6, amsgrad=False)
 #sgd = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
 model.compile(optimizer=opt, loss='categorical_crossentropy', metrics=['accuracy'])
