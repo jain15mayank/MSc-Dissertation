@@ -122,7 +122,7 @@ FLAGS = flags.FLAGS
 TRAIN_FRAC = 0.85
 NB_EPOCHS = 150
 BATCH_SIZE = 128
-LEARNING_RATE = .0000001
+LEARNING_RATE = .000001
 TRAIN_DIR = 'train_dir'
 FILENAME = 'turnDirTest.ckpt'
 LOAD_MODEL = False
@@ -256,7 +256,7 @@ model.compile(optimizer=opt, loss='categorical_crossentropy', metrics=['accuracy
 #train the model
 es = EarlyStopping(monitor='val_loss', mode='min', verbose=1, patience=50)
 
-history = model.fit(x_train, y_train, validation_data=(x_test, y_test), epochs=NB_EPOCHS, callbacks=[es])
+history = model.fit(x_train, y_train, validation_data=(x_test, y_test), batch_size=BATCH_SIZE, epochs=NB_EPOCHS, callbacks=[es])
 
 # Plot training & validation accuracy values
 fig = plt.figure()
