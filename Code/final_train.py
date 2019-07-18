@@ -50,20 +50,25 @@ def load_images_from_folder(folder, maxImg=None):
     else:
       break
   # Create empty numpy array for all the images to come
-  if maxImg == None:
-    images = np.empty((len(os.listdir(folder)), img.shape[0], img.shape[1], img.shape[2]), dtype=np.float32)
-  else:
-    images = np.empty((maxImg, img.shape[0], img.shape[1], img.shape[2]), dtype=np.float32)
+  images = np.empty((len(os.listdir(folder)), img.shape[0], img.shape[1], img.shape[2]), dtype=np.float32)
+  
   # Iterate over all filenames to fill in the images array
   for i, filename in enumerate(os.listdir(folder)):
     img = cv2.imread(os.path.join(folder,filename))
     if img is not None:
       images[i, ...] = img
-    if maxImg is not None:
-      if i>=maxImg-1:
+  if maxImg is not None:
+    maxImages = np.empty((maxImg, img.shape[0], img.shape[1], img.shape[2]), dtype=np.float32)
+    indices = np.random.permutation(len(os.listdir(folder)))
+    i = 0
+    for idx in indices:
+      maxImages[i, ...] = images[idx]
+      i+=1
+      if i>=maxImg:
         break
-  # Return images
-  return images
+    return maxImages
+  else:
+    return images
 
 '''
 CREATE Training and Test Data
