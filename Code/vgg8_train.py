@@ -25,7 +25,7 @@ from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.optimizers import SGD
 from tensorflow.python.platform import app
 from tensorflow.python.platform import flags
-from cleverhans_utils_keras import cnn_model, KerasModelWrapper
+#from cleverhans_utils_keras import cnn_model, KerasModelWrapper
 from tensorflow.keras.callbacks import EarlyStopping
 
 import matplotlib
