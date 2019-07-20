@@ -1,6 +1,6 @@
 # load and evaluate a saved model
 import os
-from numpy import loadtxt
+#from numpy import loadtxt
 import cv2
 import numpy as np
 
@@ -77,19 +77,8 @@ def shuffle_in_unison(a, b):
   np.random.shuffle(b)
 shuffle_in_unison(x_complete, y_complete)
 
-# Get Test and Train Dataset
-len_train = int(round(0.85*y_complete.shape[0]))
-x_train = x_complete[0:len_train]
-y_train = y_complete[0:len_train]
-x_test  = x_complete[len_train:]
-y_test  = y_complete[len_train:]
-
-# Obtain Image Parameters
-img_rows, img_cols, nchannels = x_train.shape[1:4]
-nb_classes = y_train.shape[1]
-
 '''
 EVALUATE THE MODEL
 '''
-score = model.evaluate(x_test, y_test, verbose=0)
+score = model.evaluate(x_complete, y_complete, verbose=0)
 print("%s: %.2f%%" % (model.metrics_names[1], score[1]*100))

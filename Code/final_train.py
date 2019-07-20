@@ -84,8 +84,8 @@ print("shape of original goStraight", goStraight.shape)
 x_train = np.concatenate((turnLeft, turnRight, goStraight))
 y_train = np.zeros((x_train.shape[0], 3))
 y_train[0:turnLeft.shape[0], 0] = 1
-y_train[turnLeft.shape[0]:turnRight.shape[0], 1] = 1
-y_train[turnRight.shape[0]:, 2] = 1
+y_train[turnLeft.shape[0]:turnLeft.shape[0] + turnRight.shape[0], 1] = 1
+y_train[turnLeft.shape[0] + turnRight.shape[0]:, 2] = 1
 
 def shuffle_in_unison(a, b):
   rng_state = np.random.get_state()
@@ -105,8 +105,8 @@ print("shape of original goStraight", goStraight.shape)
 x_test = np.concatenate((turnLeft, turnRight, goStraight))
 y_test = np.zeros((x_test.shape[0], 3))
 y_test[0:turnLeft.shape[0], 0] = 1
-y_test[turnLeft.shape[0]:turnRight.shape[0], 1] = 1
-y_test[turnRight.shape[0]:, 2] = 1
+y_test[turnLeft.shape[0]:turnLeft.shape[0]+turnRight.shape[0], 1] = 1
+y_test[turnLeft.shape[0]+turnRight.shape[0]:, 2] = 1
 shuffle_in_unison(x_test, y_test)
 
 '''
