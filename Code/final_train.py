@@ -19,6 +19,8 @@ from tensorflow.python.platform import flags
 #from cleverhans_utils_keras import cnn_model, KerasModelWrapper
 from tensorflow.keras.callbacks import EarlyStopping
 
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 plt.rcParams['figure.figsize'] = (7,7) # Make the figures a bit bigger
 
@@ -120,7 +122,7 @@ nb_classes = y_train.shape[1]
 FLAGS = flags.FLAGS
 
 TRAIN_FRAC = 0.85
-NB_EPOCHS = 150
+NB_EPOCHS = 1
 BATCH_SIZE = 128
 LEARNING_RATE = .000001
 TRAIN_DIR = 'train_dir'
