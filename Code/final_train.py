@@ -122,7 +122,7 @@ nb_classes = y_train.shape[1]
 FLAGS = flags.FLAGS
 
 TRAIN_FRAC = 0.85
-NB_EPOCHS = 1
+NB_EPOCHS = 150
 BATCH_SIZE = 128
 LEARNING_RATE = .000001
 TRAIN_DIR = 'train_dir'
