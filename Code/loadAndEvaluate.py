@@ -67,8 +67,8 @@ CREATE Training and Test Data
 x_complete = np.concatenate((turnLeft1, turnRight1, goStraight1))
 y_complete = np.zeros((x_complete.shape[0], 3))
 y_complete[0:turnLeft1.shape[0], 0] = 1
-y_complete[turnLeft1.shape[0]:turnRight1.shape[0], 1] = 1
-y_complete[turnRight1.shape[0]:, 2] = 1
+y_complete[turnLeft1.shape[0]:turnLeft1.shape[0]+turnRight1.shape[0], 1] = 1
+y_complete[turnLeft1.shape[0]+turnRight1.shape[0]:, 2] = 1
 
 def shuffle_in_unison(a, b):
   rng_state = np.random.get_state()

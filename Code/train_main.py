@@ -91,8 +91,8 @@ print("shape of original goStraight", goStraight.shape)
 x_test = np.concatenate((turnLeft, turnRight, goStraight))
 y_test = np.zeros((x_test.shape[0], 3))
 y_test[0:turnLeft.shape[0], 0] = 1
-y_test[turnLeft.shape[0]:turnRight.shape[0], 1] = 1
-y_test[turnRight.shape[0]:, 2] = 1
+y_test[turnLeft.shape[0]:turnLeft.shape[0]+turnRight.shape[0], 1] = 1
+y_test[turnLeft.shape[0]+turnRight.shape[0]:, 2] = 1
 shuffle_in_unison(x_test, y_test)
 '''
 CREATE Model
