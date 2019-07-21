@@ -15,7 +15,8 @@ from keras.models import load_model
 from keras.utils import CustomObjectScope
 from keras.initializers import glorot_uniform
 
-from pso_pyswarm import pso
+#from pso_pyswarm import pso
+from pso_pyswarm_mudSplat import pso
 
 def load_images_from_folder(folder, maxImg=None):
   # Load 1 file to check image shape
@@ -169,7 +170,7 @@ with CustomObjectScope({'GlorotUniform': glorot_uniform()}):
 outputFolder = "Misclassified Images"
 def pso_objective(features, *args):
     xOffset, yOffset, scale, rotate = features
-    imgData, oriClass, tarClass, mudImgPath = args
+    imgData, oriClass, tarClass, mudImgPath, model = args
     mudSplatObj = mudSplat(mudImgPath, xOffset, yOffset, scale, rotate)
     return predictModelMudSplat(imgData, oriClass, tarClass, model,
                                 [mudSplatObj])[0]
@@ -185,12 +186,15 @@ for num in numSplats:
             testTLimgs[j, ...] = img
         oriClass = 0
         tarClass = 1
-        args = (np.float32(testTLimgs), oriClass, tarClass, mudImgPath)
+        args = (np.float32(testTLimgs), oriClass, tarClass, mudImgPath, model)
         lb = [0.2*args[0][0].shape[0], 0.2*args[0][0].shape[1], 15, 0]
         ub = [0.6*args[0][0].shape[0], 0.6*args[0][0].shape[1], 40, 360]
+        #q_opt, f_opt = pso(pso_objective, lb, ub, args=args,
+        #                   swarmsize=100, omega=0.8, phip=2.0, phig=2.0,
+        #                   maxiter=3000, minstep=1e-8, debug=True, processes=1)
         q_opt, f_opt = pso(pso_objective, lb, ub, args=args,
                            swarmsize=100, omega=0.8, phip=2.0, phig=2.0,
-                           maxiter=3000, minstep=1e-8, debug=True, processes=1)
+                           maxiter=3000, minstep=1e-8, debug=True)
         print(q_opt)
         print(f_opt)
         print('Hooray!')
@@ -214,9 +218,12 @@ for num in numSplats:
         args = (np.float32(testTRimgs), oriClass, tarClass, mudImgPath)
         lb = [0.2*args[0][0].shape[0], 0.2*args[0][0].shape[1], 15, 0]
         ub = [0.6*args[0][0].shape[0], 0.6*args[0][0].shape[1], 40, 360]
+        #q_opt, f_opt = pso(pso_objective, lb, ub, args=args,
+        #                   swarmsize=100, omega=0.8, phip=2.0, phig=2.0,
+        #                   maxiter=3000, minstep=1e-8, debug=True, processes=1)
         q_opt, f_opt = pso(pso_objective, lb, ub, args=args,
                            swarmsize=100, omega=0.8, phip=2.0, phig=2.0,
-                           maxiter=3000, minstep=1e-8, debug=True, processes=1)
+                           maxiter=3000, minstep=1e-8, debug=True)
         print(q_opt)
         print(f_opt)
         print('Hooray!')
@@ -240,9 +247,12 @@ for num in numSplats:
         args = (np.float32(testGSimgs), oriClass, tarClass, mudImgPath)
         lb = [0.2*args[0][0].shape[0], 0.2*args[0][0].shape[1], 15, 0]
         ub = [0.6*args[0][0].shape[0], 0.6*args[0][0].shape[1], 40, 360]
+        #q_opt, f_opt = pso(pso_objective, lb, ub, args=args,
+        #                   swarmsize=100, omega=0.8, phip=2.0, phig=2.0,
+        #                   maxiter=3000, minstep=1e-8, debug=True, processes=1)
         q_opt, f_opt = pso(pso_objective, lb, ub, args=args,
                            swarmsize=100, omega=0.8, phip=2.0, phig=2.0,
-                           maxiter=3000, minstep=1e-8, debug=True, processes=1)
+                           maxiter=3000, minstep=1e-8, debug=True)
         print(q_opt)
         print(f_opt)
         print('Hooray!')
