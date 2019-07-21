@@ -122,9 +122,9 @@ nb_classes = y_train.shape[1]
 FLAGS = flags.FLAGS
 
 TRAIN_FRAC = 0.85
-NB_EPOCHS = 150
+NB_EPOCHS = 300
 BATCH_SIZE = 128
-LEARNING_RATE = .0000001
+LEARNING_RATE = .0000005
 TRAIN_DIR = 'train_dir'
 FILENAME = 'turnDirTest.ckpt'
 LOAD_MODEL = False
