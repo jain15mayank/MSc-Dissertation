@@ -11,9 +11,9 @@ from copy import deepcopy
 import numpy as np
 from utils_mudSlap import addMudSplat
 
-from keras.models import load_model
-from keras.utils import CustomObjectScope
-from keras.initializers import glorot_uniform
+from tensorflow.keras.models import load_model
+from tensorflow.keras.utils import CustomObjectScope
+from tensorflow.keras.initializers import glorot_uniform
 
 #from pso_pyswarm import pso
 from pso_pyswarm_mudSplat import pso
