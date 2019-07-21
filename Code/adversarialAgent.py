@@ -180,9 +180,9 @@ For all images in same class - TurnLeft
 numSplats = [1]
 for num in numSplats:
     for mudImgPath in ['AdversaryImages/mudSplat2.png', 'AdversaryImages/mudSplat1.png']:
-        testTLimgs = np.zeros(np.append(len(x_turnLeft), x_turnLeft[0][0].shape))
+        testTLimgs = np.zeros(np.append(len(x_turnLeft), x_turnLeft[0].shape))
         for j, img in enumerate(x_turnLeft):
-            testTLimgs[j, ...] = img[0]
+            testTLimgs[j, ...] = img
         oriClass = 0
         tarClass = 1
         args = (np.float32(testTLimgs), oriClass, tarClass, mudImgPath)
@@ -206,9 +206,9 @@ For all images in same class - TurnRight
 numSplats = [1]
 for num in numSplats:
     for mudImgPath in ['AdversaryImages/mudSplat2.png', 'AdversaryImages/mudSplat1.png']:
-        testTRimgs = np.zeros(np.append(len(x_turnRight), x_turnRight[0][0].shape))
+        testTRimgs = np.zeros(np.append(len(x_turnRight), x_turnRight[0].shape))
         for j, img in enumerate(x_turnRight):
-            testTRimgs[j, ...] = img[0]
+            testTRimgs[j, ...] = img
         oriClass = 1
         tarClass = 0
         args = (np.float32(testTRimgs), oriClass, tarClass, mudImgPath)
@@ -232,9 +232,9 @@ For all images in same class - Go Straight
 numSplats = [1]
 for num in numSplats:
     for mudImgPath in ['AdversaryImages/mudSplat2.png', 'AdversaryImages/mudSplat1.png']:
-        testGSimgs = np.zeros(np.append(len(x_goStraight), x_goStraight[0][0].shape))
+        testGSimgs = np.zeros(np.append(len(x_goStraight), x_goStraight[0].shape))
         for j, img in enumerate(x_goStraight):
-            testGSimgs[j, ...] = img[0]
+            testGSimgs[j, ...] = img
         oriClass = 2
         tarClass = 0
         args = (np.float32(testGSimgs), oriClass, tarClass, mudImgPath)
