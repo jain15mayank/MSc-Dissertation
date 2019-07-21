@@ -194,6 +194,11 @@ for num in numSplats:
         print(q_opt)
         print(f_opt)
         print('Hooray!')
+        f = open("PSOoutput.txt", "a+")
+        f.write("For Turn Left Class (mudImgPath: " + mudImgPath + "):\n")
+        f.write("q_opt = " + str(q_opt) + "\n")
+        f.write("f_opt = " + str(f_opt) + "\n")
+        f.close()
 
 '''
 For all images in same class - TurnRight
@@ -215,6 +220,11 @@ for num in numSplats:
         print(q_opt)
         print(f_opt)
         print('Hooray!')
+        f = open("PSOoutput.txt", "a+")
+        f.write("For Turn Right Class (mudImgPath: " + mudImgPath + "):\n")
+        f.write("q_opt = " + str(q_opt) + "\n")
+        f.write("f_opt = " + str(f_opt) + "\n")
+        f.close()
 
 '''
 For all images in same class - Go Straight
@@ -236,3 +246,8 @@ for num in numSplats:
         print(q_opt)
         print(f_opt)
         print('Hooray!')
+        f = open("PSOoutput.txt", "a+")
+        f.write("For Go Straight Class (mudImgPath: " + mudImgPath + "):\n")
+        f.write("q_opt = " + str(q_opt) + "\n")
+        f.write("f_opt = " + str(f_opt) + "\n")
+        f.close()
