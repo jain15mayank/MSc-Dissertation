@@ -142,83 +142,95 @@ print("shape of original turnLeft", turnLeft.shape)
 goStraight = load_images_from_folder(folder + '35')
 print("shape of original goStraight", goStraight.shape)
 
+x_complete = np.concatenate((turnLeft, turnRight, goStraight))
+y_complete = np.zeros((x_complete.shape[0], 3))
+y_complete[0:turnLeft.shape[0], 0] = 1
+y_complete[turnLeft.shape[0]:turnLeft.shape[0] + turnRight.shape[0], 1] = 1
+y_complete[turnLeft.shape[0] + turnRight.shape[0]:, 2] = 1
+
+x_turnLeft = turnLeft
+y_turnLeft = np.zeros((x_turnLeft.shape[0], 3))
+y_turnLeft[:,0] = 1
+
+x_turnRight = turnRight
+y_turnRight = np.zeros((x_turnRight.shape[0], 3))
+y_turnRight[:,1] = 1
+
+x_goStraight = goStraight
+y_goStraight = np.zeros((x_goStraight.shape[0], 3))
+y_goStraight[:,2] = 1
+
+#modelPath = '../Models/ResNet20 Batch Max - Data Random - LR 1e-6/model.h5'
+modelPath = '../Models/VGG16 - Data Random - LR 1e-7/model.h5'
+
 with CustomObjectScope({'GlorotUniform': glorot_uniform()}):
     model = load_model('model.h5')
 
-testTurnRightImgs = []
-outputFolder = "Correctly Classified Images"
-i = 0
-if not os.path.exists(outputFolder+'/33/'):
-    os.makedirs(outputFolder+'/33/')
-for img in turnRight:
-    if predictModelMudSplat(np.expand_dims(img, axis=0), 1, 0, model)[0] == 2:
-        testTurnRightImgs.append((img, 1, 0))
-        cv2.imwrite(outputFolder+'/33/'+str(i)+'.png', img)
-        i+=1
-print('here')
-
-testTurnLeftImgs = []
-i = 0
-if not os.path.exists(outputFolder+'/34/'):
-    os.makedirs(outputFolder+'/34/')
-for img in turnLeft:
-    if predictModelMudSplat(np.expand_dims(img, axis=0), 0, 1, model)[0] == 2:
-        testTurnLeftImgs.append((img, 0, 1))
-        cv2.imwrite(outputFolder+'/34/'+str(i)+'.png', img)
-        i+=1
-print('here 2')
-
-'''
-
-folder = "Correctly Classified Images/"
-#turnRight = load_images_from_folder(folder + '33')
-#print("shape of original turnRight", turnRight.shape)
-turnLeft = load_images_from_folder(folder + '34')
-print("shape of original turnLeft", turnLeft.shape)
-#testImgs = np.concatenate((turnRight, turnLeft), axis=0)
-testImgs = turnLeft
-'''
-
 outputFolder = "Misclassified Images"
-def pso_objective_1(features, *args):
+def pso_objective(features, *args):
     xOffset, yOffset, scale, rotate = features
     imgData, oriClass, tarClass, mudImgPath = args
     mudSplatObj = mudSplat(mudImgPath, xOffset, yOffset, scale, rotate)
     return predictModelMudSplat(imgData, oriClass, tarClass, model,
                                 [mudSplatObj])[0]
+
+'''
+For all images in same class - TurnLeft
 '''
 numSplats = [1]
-i = 0
-for imgData in testImgs:
-    for num in numSplats:
-        for mudImgPath in ['AdversaryImages/mudSplat1.png', 'AdversaryImages/mudSplat2.png']:
-            args = (imgData, mudImgPath)
-            lb = [0.2*args[0][0].shape[0], 0.2*args[0][0].shape[1], 15, 0]
-            ub = [0.6*args[0][0].shape[0], 0.6*args[0][0].shape[1], 40, 360]
-            q_opt, f_opt = pso(pso_objective_1, lb, ub, args=args,
-                               swarmsize=100, omega=0.5, phip=0.5, phig=0.5,
-                               maxiter=100, minstep=1e-8)
-            if f_opt<np.log(0.5):
-                img = addMudSplat(imgData[0], cv2.imread(mudImgPath, cv2.IMREAD_UNCHANGED),
-                                  q_opt[0], q_opt[1], q_opt[2], q_opt[3])
-                cv2.imwrite(outputFolder+'/'+str(i)+'.png', img)
-                i+=1
-                print(q_opt)
-                print('Hooray!')
-'''
-numSplats = [1]
-i = 0
 for num in numSplats:
-    for mudImgPath in ['AdversaryImages/mudSplat1.png', 'AdversaryImages/mudSplat2.png']:
-        testTLimgs = np.zeros(np.append(len(testTurnLeftImgs), testTurnLeftImgs[0][0].shape))
-        for j, img in enumerate(testTurnLeftImgs):
+    for mudImgPath in ['AdversaryImages/mudSplat2.png', 'AdversaryImages/mudSplat1.png']:
+        testTLimgs = np.zeros(np.append(len(x_turnLeft), x_turnLeft[0][0].shape))
+        for j, img in enumerate(x_turnLeft):
             testTLimgs[j, ...] = img[0]
         oriClass = 0
         tarClass = 1
         args = (np.float32(testTLimgs), oriClass, tarClass, mudImgPath)
         lb = [0.2*args[0][0].shape[0], 0.2*args[0][0].shape[1], 15, 0]
         ub = [0.6*args[0][0].shape[0], 0.6*args[0][0].shape[1], 40, 360]
-        q_opt, f_opt = pso(pso_objective_1, lb, ub, args=args,
+        q_opt, f_opt = pso(pso_objective, lb, ub, args=args,
+                           swarmsize=100, omega=0.8, phip=2.0, phig=2.0,
+                           maxiter=3000, minstep=1e-8, debug=True, processes=1)
+        print(q_opt)
+        print(f_opt)
+        print('Hooray!')
+
+'''
+For all images in same class - TurnRight
+'''
+numSplats = [1]
+for num in numSplats:
+    for mudImgPath in ['AdversaryImages/mudSplat2.png', 'AdversaryImages/mudSplat1.png']:
+        testTRimgs = np.zeros(np.append(len(x_turnRight), x_turnRight[0][0].shape))
+        for j, img in enumerate(x_turnRight):
+            testTRimgs[j, ...] = img[0]
+        oriClass = 1
+        tarClass = 0
+        args = (np.float32(testTRimgs), oriClass, tarClass, mudImgPath)
+        lb = [0.2*args[0][0].shape[0], 0.2*args[0][0].shape[1], 15, 0]
+        ub = [0.6*args[0][0].shape[0], 0.6*args[0][0].shape[1], 40, 360]
+        q_opt, f_opt = pso(pso_objective, lb, ub, args=args,
+                           swarmsize=100, omega=0.8, phip=2.0, phig=2.0,
+                           maxiter=3000, minstep=1e-8, debug=True, processes=1)
+        print(q_opt)
+        print(f_opt)
+        print('Hooray!')
+
+'''
+For all images in same class - Go Straight
+'''
+numSplats = [1]
+for num in numSplats:
+    for mudImgPath in ['AdversaryImages/mudSplat2.png', 'AdversaryImages/mudSplat1.png']:
+        testGSimgs = np.zeros(np.append(len(x_goStraight), x_goStraight[0][0].shape))
+        for j, img in enumerate(x_goStraight):
+            testGSimgs[j, ...] = img[0]
+        oriClass = 2
+        tarClass = 0
+        args = (np.float32(testGSimgs), oriClass, tarClass, mudImgPath)
+        lb = [0.2*args[0][0].shape[0], 0.2*args[0][0].shape[1], 15, 0]
+        ub = [0.6*args[0][0].shape[0], 0.6*args[0][0].shape[1], 40, 360]
+        q_opt, f_opt = pso(pso_objective, lb, ub, args=args,
                            swarmsize=100, omega=0.8, phip=2.0, phig=2.0,
                            maxiter=3000, minstep=1e-8, debug=True, processes=1)
         print(q_opt)
