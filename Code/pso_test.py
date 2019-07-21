@@ -15,4 +15,4 @@ dim = 20
 lb = -100*np.ones(dim)
 ub = 100*np.ones(dim)
 q_opt, f_opt = pso(pso_objective, lb, ub, swarmsize=40, omega=0.8, phip=2.0,
-                   phig=2.0, maxiter=1000, minstep=1e-28, debug=True, processes=4)
+                   phig=2.0, maxiter=1000, minstep=1e-28, debug=True, processes=2)

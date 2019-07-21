@@ -15,7 +15,7 @@ from keras.models import load_model
 from keras.utils import CustomObjectScope
 from keras.initializers import glorot_uniform
 
-from pyswarm import pso
+from pso_pyswarm import pso
 
 def load_images_from_folder(folder, maxImg=None):
   # Load 1 file to check image shape
@@ -96,9 +96,9 @@ def  predictModelMudSplat(originalImages, originalClass, targetClass,
         predScore: Classify predictions w.r.t. original and target classes and
             give score according to the following scheme:
                 2   : if predicted class == original class (correct prediction)
-                0   : if predicted class == target class (incorrect prediction - 
+                0   : if predicted class == target class (incorrect prediction -
                                                           target matched)
-                1   : if predicted class == any other class (incorrect prediction - 
+                1   : if predicted class == any other class (incorrect prediction -
                                                              target mismatched)
             The scores for all images are then added to produce final score
         predOutput: list of predictions
@@ -119,7 +119,7 @@ def  predictModelMudSplat(originalImages, originalClass, targetClass,
         predOutput = model.predict(splattedImages)
     else:
         predOutput = model.predict(newImages)
-    
+
     predScore = 0
     for outputs in predOutput:
         if np.any(np.argmax(outputs) == originalClass):
@@ -220,7 +220,7 @@ for num in numSplats:
         ub = [0.6*args[0][0].shape[0], 0.6*args[0][0].shape[1], 40, 360]
         q_opt, f_opt = pso(pso_objective_1, lb, ub, args=args,
                            swarmsize=100, omega=0.8, phip=2.0, phig=2.0,
-                           maxiter=3000, minstep=1e-8, debug=True)
+                           maxiter=3000, minstep=1e-8, debug=True, processes=1)
         print(q_opt)
         print(f_opt)
         print('Hooray!')
