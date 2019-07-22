@@ -66,6 +66,7 @@ def  predictModelMudSplat_Nparticles(originalImages, originalClass, targetClass,
         predOutput: list of predictions
             The transformed output image with mud-splat on it
     """
+    print("Here")
     newImages = deepcopy(originalImages)
     if len(newImages.shape) == 3:   # Only 1 image is provided
         newImages = np.expand_dims(newImages, axis=0)
@@ -81,7 +82,7 @@ def  predictModelMudSplat_Nparticles(originalImages, originalClass, targetClass,
         predOutput = model.predict(splattedImages)
     else:
         predOutput = model.predict(newImages)
-
+    print("Here Again!")
     predScore = np.zeros(len(mudSplatObjects))
     for n in range(len(mudSplatObjects)):
         for outputs in predOutput[n*len(newImages):(n+1)*len(newImages)]:
@@ -91,6 +92,8 @@ def  predictModelMudSplat_Nparticles(originalImages, originalClass, targetClass,
                 predScore[n] += 0
             else:
                 predScore[n] += 1
+    print("Here Too")
+    print(predScore)
     return predScore, predOutput
 
 def _obj_wrapper(func, args, kwargs, x):
