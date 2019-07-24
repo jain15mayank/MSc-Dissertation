@@ -112,10 +112,13 @@ def addMudSplat(originalImage, mudSplatRef, SplatOffsetX = None,
     # Calculate standard deviation for Gaussian Blur using Original Image - to
     # be applied to the mud-splat for overlaying
     ret = cv2.threshold(np.uint8(originalImage[25:75,25:75,1]),0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)[0]
+    '''
     temp_wh_half = []
     for pixel in originalImage[25:75,25:75,1].flatten():
         if pixel >= ret:
             temp_wh_half.append(pixel)
+    '''
+    temp_wh_half = originalImage[25:75,25:75,1][originalImage[25:75,25:75,1]>=ret]
     sigma = np.std(temp_wh_half)
     # Apply Gaussian Blur to Mud Splat
     testSplat = cv2.GaussianBlur(testSplat, (3, 3), sigma)
@@ -125,7 +128,11 @@ def addMudSplat(originalImage, mudSplatRef, SplatOffsetX = None,
     alpha_s = testSplat[:, :, 3]/255
     alpha_l = 1.0 - alpha_s
     muddyImage = copy.deepcopy(originalImage)
+    muddyImage[y1:y2, x1:x2, :] = np.moveaxis(np.add(np.multiply(alpha_s, np.moveaxis(testSplat[:,:,:3],-1,0)),
+            np.multiply(alpha_l, np.moveaxis(originalImage[y1:y2, x1:x2, :],-1,0))).astype(int),0,-1)
+    '''
     for c in range(0, 3):
         muddyImage[y1:y2, x1:x2, c] = ((alpha_s * testSplat[:, :, c]).astype(int) +
                   (alpha_l * originalImage[y1:y2, x1:x2, c]).astype(int))
+    '''
     return muddyImage

@@ -73,6 +73,8 @@ def  predictModelMudSplat_Nparticles(originalImages, originalClass, targetClass,
     if mudSplatObjects is not None:
         numSplattedImages = newImages.shape[0]*len(mudSplatObjects)
         splattedImages = np.zeros(np.append(numSplattedImages,newImages.shape[1:]))
+        print(len(mudSplatObjects))
+        print(len(newImages))
         for n, mudSplatObj in enumerate(mudSplatObjects):
             mudSplat = cv2.imread(mudSplatObj.imgPath, cv2.IMREAD_UNCHANGED)
             for i, img in enumerate(newImages):
