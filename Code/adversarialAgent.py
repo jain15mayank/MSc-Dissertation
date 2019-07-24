@@ -334,7 +334,7 @@ for num in numSplats:
             print('Hooray!')
             f = open("PSOoutput.txt", "a+")
 
-            f.write("For Turn Left Class (mudImgPath: " + mudImgPath + ") - image #" + j + ":\n")
+            f.write("For Turn Left Class (mudImgPath: " + mudImgPath + ") - image #" + str(j) + ":\n")
             f.write("Original Score: " + str(predictModelMudSplat(testTLimgs, oriClass, tarClass, model)[0]) + "\n")
             f.write("q_opt = " + str(q_opt) + "\n")
             f.write("f_opt = " + str(f_opt) + "\n")
