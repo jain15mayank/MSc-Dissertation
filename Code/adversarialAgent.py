@@ -256,14 +256,16 @@ def  predictModelMudSplat(originalImages, originalClass, targetClass,
         predOutput = model.predict(newImages)
 
     predScore = 0
+    accuracy = 0
     for outputs in predOutput:
         if np.any(np.argmax(outputs) == originalClass):
             predScore += 2
+            accuracy += 1
         elif np.any(np.argmax(outputs) == targetClass):
             predScore += 0
         else:
             predScore += 1
-    return predScore, predOutput
+    return predScore, predOutput, accuracy*100/len(predOutput)
 
 '''
 MAIN CODE
@@ -335,11 +337,11 @@ for num in numSplats:
             f = open("PSOoutput.txt", "a+")
 
             f.write("For Turn Left Class (mudImgPath: " + mudImgPath + ") - image #" + str(j) + ":\n")
-            f.write("Original Score: " + str(predictModelMudSplat(testTLimgs, oriClass, tarClass, model)[0]) + "\n")
+            f.write("Original Accuracy: " + str(predictModelMudSplat(testTLimgs, oriClass, tarClass, model)[2]) + "\n")
             f.write("q_opt = " + str(q_opt) + "\n")
             f.write("f_opt = " + str(f_opt) + "\n")
             mudSplatObject = mudSplat(mudImgPath, q_opt[0], q_opt[1], q_opt[2], q_opt[3])
-            f.write("New Score: " + str(predictModelMudSplat(testTLimgs, oriClass, tarClass, model, mudSplatObject)[0]) + "\n\n")
+            f.write("New Accuracy: " + str(predictModelMudSplat(testTLimgs, oriClass, tarClass, model, [mudSplatObject])[2]) + "\n\n")
             f.close()
 
 '''
