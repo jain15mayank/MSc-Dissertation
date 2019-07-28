@@ -246,7 +246,7 @@ def  predictModelMudSplat(originalImages, originalClass, targetClass,
         predOutput: list of predictions
             The transformed output image with mud-splat on it
     """
-    newImages = deepcopy(originalImages)
+    newImages = deepcopy(originalImages).astype('float32')
     if len(newImages.shape) == 3:   # Only 1 image is provided
         newImages = np.expand_dims(newImages, axis=0)
     if mudSplatObjects is not None:
@@ -337,7 +337,7 @@ for num in numSplats:
             #                   maxiter=3000, minstep=1e-8, debug=True, processes=1)
             q_opt, f_opt = pso(pso_objective, lb, ub, args=args,
                                swarmsize=100, omega=0.8, phip=2.0, phig=2.0,
-                               maxiter=20, minstep=1e-8, debug=True)
+                               maxiter=2, minstep=1e-8, debug=True)
             print(q_opt)
             print(f_opt)
             print('Hooray!')
