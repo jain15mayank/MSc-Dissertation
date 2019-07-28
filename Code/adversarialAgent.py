@@ -43,23 +43,23 @@ def load_images_from_folder(folder, maxImg=None):
   # Return images
   return images
 
-def makeObservations(imgList, mode='multi', farScale = 0.1, obliquePercentage = 10, obliqueDirection = 'left'):
+def makeObservations(imgList, mode='multi', farScale = 0.5, obliquePercentage = 10, obliqueDirection = 'left'):
     """
     Changes all the images in the provided list according to the given parameters.
         imgList: [ndarray]
             List of all images to be altered; All images must be of same dimensions
-        farScale: scalar (float) (0-1]
-            Parameter defining the closeness of the new image (1=same, ~0=farthest)
-        obliquePercentage: scalar (int) (0-45)
-            Defines how much the image is to be tilted
-        obliqueDirection: string ('left' or 'right')
-            Specifies the direction of tilt
         mode: string ('single' or 'multi')
             If 'multi': ignores other parameters and generate 28 new observations for
                         each image. 7 different oblique patterns each at 4 different
                         distances (including original image too)
             If 'single': create 1 observation for each image in the list according to
                          the specified parameters
+        farScale: scalar (float) (0-1]
+            Parameter defining the closeness of the new image (1=same, ~0=farthest)
+        obliquePercentage: scalar (int) (0-45)
+            Defines how much the image is to be tilted
+        obliqueDirection: string ('left' or 'right')
+            Specifies the direction of tilt
     """
     if (len(imgList.shape)==3): #Only one image is provided
         numImgs = 1
@@ -73,8 +73,8 @@ def makeObservations(imgList, mode='multi', farScale = 0.1, obliquePercentage = 
         imgCols = imgList.shape[2]
         nChannels = imgList.shape[3]
     if mode=='multi':
-        newImgList = np.zeros((numImgs*28, imgRows, imgCols, nChannels))
-        obliquePercentages = [20, 25, 30]
+        newImgList = np.zeros((numImgs*36, imgRows, imgCols, nChannels))
+        obliquePercentages = [20, 25, 30, 35]
         farScales = [1, 0.65, 0.45, 0.25]
         i = 0
         for img in imgList:
@@ -104,6 +104,9 @@ def makeObservations(imgList, mode='multi', farScale = 0.1, obliquePercentage = 
                     # compute the perspective transform matrix and then apply it
                     M = cv2.getPerspectiveTransform(src, dst)
                     warped = cv2.warpPerspective(img, M, (imgRows, imgCols))
+                    #warped = warped[:, int(XobliquePixels):int(imgRows - XobliquePixels - 1)]
+                    warped = warped[int(oP*YobliquePixels/100):int(imgCols - (oP*YobliquePixels/100) - 1), 
+                                int(XobliquePixels):int(imgRows - XobliquePixels - 1)]
                     warped = cv2.resize(warped, (imgRows, imgCols))
                     img1 = cv2.resize(warped, (int(imgRows*fS), int(imgCols*fS)))
                     img1 = cv2.resize(img1, (imgRows, imgCols))
@@ -128,6 +131,8 @@ def makeObservations(imgList, mode='multi', farScale = 0.1, obliquePercentage = 
                     # compute the perspective transform matrix and then apply it
                     M = cv2.getPerspectiveTransform(src, dst)
                     warped = cv2.warpPerspective(img, M, (imgRows, imgCols))
+                    warped = warped[int(oP*YobliquePixels/100):int(imgCols - (oP*YobliquePixels/100) - 1), 
+                                int(XobliquePixels):int(imgRows - XobliquePixels - 1)]
                     warped = cv2.resize(warped, (imgRows, imgCols))
                     img1 = cv2.resize(warped, (int(imgRows*fS), int(imgCols*fS)))
                     img1 = cv2.resize(img1, (imgRows, imgCols))
@@ -169,6 +174,8 @@ def makeObservations(imgList, mode='multi', farScale = 0.1, obliquePercentage = 
             # compute the perspective transform matrix and then apply it
             M = cv2.getPerspectiveTransform(src, dst)
             warped = cv2.warpPerspective(img, M, (imgRows, imgCols))
+            warped = warped[int(obliquePercentage*YobliquePixels/100):int(imgCols - (obliquePercentage*YobliquePixels/100) - 1), 
+                        int(XobliquePixels):int(imgRows - XobliquePixels - 1)]
             warped = cv2.resize(warped, (imgRows, imgCols))
             img1 = cv2.resize(warped, (int(imgRows*farScale), int(imgCols*farScale)))
             img1 = cv2.resize(img1, (imgRows, imgCols))
