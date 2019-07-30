@@ -104,7 +104,7 @@ def makeObservations(imgList, mode='multi', farScale = 0.5, obliquePercentage = 
         nChannels = imgList.shape[3]
     if mode=='multi':
         obliquePercentages = [20, 30]
-        farScales = [1, 0.5, 0.2]
+        farScales = [1, 0.25]
         newImgList = np.zeros((numImgs*((2*len(obliquePercentages))+1)*len(farScales), imgRows, imgCols, nChannels))
         i = 0
         for img in imgList:

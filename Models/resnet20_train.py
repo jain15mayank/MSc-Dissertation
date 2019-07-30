@@ -105,7 +105,7 @@ def makeObservations(imgList, mode='multi', farScale = 0.5, obliquePercentage = 
         nChannels = imgList.shape[3]
     if mode=='multi':
         obliquePercentages = [20, 30]
-        farScales = [1, 0.5, 0.2]
+        farScales = [1, 0.25]
         newImgList = np.zeros((numImgs*((2*len(obliquePercentages))+1)*len(farScales), imgRows, imgCols, nChannels))
         i = 0
         for img in imgList:
@@ -265,7 +265,7 @@ nb_classes = y_train.shape[1]
 FLAGS = flags.FLAGS
 
 TRAIN_FRAC = 0.85
-NB_EPOCHS = 300
+NB_EPOCHS = 500
 BATCH_SIZE = 128
 LEARNING_RATE = .0000005
 RESULTS_DIR = 'ResNet20 Batch Max - Data Random - LR 1e-6/'
