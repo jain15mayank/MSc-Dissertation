@@ -218,11 +218,11 @@ def makeObservations(imgList, mode='multi', farScale = 0.5, obliquePercentage = 
 CREATE Training and Test Data
 '''
 # Get Train Dataset
-turnRight = makeObservations(load_images_from_folder('../GTSRB Dataset/categorized&cropped - Training/33', 8300))
+turnRight = makeObservations(load_images_from_folder('../GTSRB Dataset/categorized&cropped - Training/33', 3000))
 print("shape of original turnRight", turnRight.shape)
-turnLeft = makeObservations(load_images_from_folder('../GTSRB Dataset/categorized&cropped - Training/34', 8300))
+turnLeft = makeObservations(load_images_from_folder('../GTSRB Dataset/categorized&cropped - Training/34', 3000))
 print("shape of original turnLeft", turnLeft.shape)
-goStraight = makeObservations(load_images_from_folder('../GTSRB Dataset/categorized&cropped - Training/35', 8300))
+goStraight = makeObservations(load_images_from_folder('../GTSRB Dataset/categorized&cropped - Training/35', 3000))
 print("shape of original goStraight", goStraight.shape)
 
 x_train = np.concatenate((turnLeft, turnRight, goStraight))
@@ -264,7 +264,7 @@ nb_classes = y_train.shape[1]
 FLAGS = flags.FLAGS
 
 TRAIN_FRAC = 0.85
-NB_EPOCHS = 75
+NB_EPOCHS = 100
 BATCH_SIZE = 128
 LEARNING_RATE = .0000001
 RESULTS_DIR = 'VGG16 - Data Random - LR 1e-7/'
@@ -303,7 +303,7 @@ model.compile(optimizer=opt, loss='categorical_crossentropy', metrics=['accuracy
 '''
 '''
 #train the model
-es = EarlyStopping(monitor='val_loss', mode='min', verbose=1, patience=15)
+es = EarlyStopping(monitor='val_loss', mode='min', verbose=1, patience=20)
 
 history = model.fit(x_train, y_train, validation_data=(x_test, y_test), epochs=NB_EPOCHS, callbacks=[es])
 

@@ -219,11 +219,11 @@ def makeObservations(imgList, mode='multi', farScale = 0.5, obliquePercentage = 
 CREATE Training and Test Data
 '''
 # Get Train Dataset
-turnRight = makeObservations(load_images_from_folder('../GTSRB Dataset/categorized&cropped - Training/33', 8300))
+turnRight = makeObservations(load_images_from_folder('../GTSRB Dataset/categorized&cropped - Training/33', 3000))
 print("shape of original turnRight", turnRight.shape)
-turnLeft = makeObservations(load_images_from_folder('../GTSRB Dataset/categorized&cropped - Training/34', 8300))
+turnLeft = makeObservations(load_images_from_folder('../GTSRB Dataset/categorized&cropped - Training/34', 3000))
 print("shape of original turnLeft", turnLeft.shape)
-goStraight = makeObservations(load_images_from_folder('../GTSRB Dataset/categorized&cropped - Training/35', 8300))
+goStraight = makeObservations(load_images_from_folder('../GTSRB Dataset/categorized&cropped - Training/35', 3000))
 print("shape of original goStraight", goStraight.shape)
 
 x_train = np.concatenate((turnLeft, turnRight, goStraight))
