@@ -303,7 +303,7 @@ model.compile(optimizer=opt, loss='categorical_crossentropy', metrics=['accuracy
 '''
 '''
 #train the model
-es = EarlyStopping(monitor='val_loss', mode='min', verbose=1, patience=20)
+es = EarlyStopping(monitor='val_loss', mode='min', verbose=1, patience=10)
 
 history = model.fit(x_train, y_train, validation_data=(x_test, y_test), epochs=NB_EPOCHS, callbacks=[es])
 
