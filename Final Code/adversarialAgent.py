@@ -404,11 +404,11 @@ for num in numSplats:
             f.write("Original Accuracy: " + str(predictModel(testTLimgs, oriClass, tarClass, model)[2]) + "\n")
             f.write("q_opt = " + str(q_opt) + "\n")
             f.write("f_opt = " + str(f_opt) + "\n")
-            mudSplatObject1 = mudSplat(mudImgPath, q_opt[0], q_opt[1], q_opt[2], q_opt[3])
-            mudSplatObject2 = mudSplat(mudImgPath, q_opt[4], q_opt[5], q_opt[6], q_opt[7])
-            mudSplatObject3 = mudSplat(mudImgPath, q_opt[8], q_opt[9], q_opt[10], q_opt[11])
-            rainFeatures    = [q_opt[12]]
-            fogFeatures     = [q_opt[13], q_opt[14]]
+            mudSplatObject1 = mudSplat(mudImgPath, int(q_opt[0]), int(q_opt[1]), q_opt[2], q_opt[3])
+            mudSplatObject2 = mudSplat(mudImgPath, int(q_opt[4]), int(q_opt[5]), q_opt[6], q_opt[7])
+            mudSplatObject3 = mudSplat(mudImgPath, int(q_opt[8]), int(q_opt[9]), q_opt[10], q_opt[11])
+            rainFeatures    = [int(q_opt[12])]
+            fogFeatures     = [q_opt[13], int(q_opt[14])]
             allFeatures     = [[mudSplatObject1] + [mudSplatObject2] + [mudSplatObject3] + rainFeatures + fogFeatures]
             f.write("New Accuracy: " + str(predictModel(testTLimgs, oriClass, tarClass, model, allFeatures)[2]) + "\n\n")
             f.close()
