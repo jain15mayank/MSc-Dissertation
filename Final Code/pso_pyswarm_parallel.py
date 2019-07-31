@@ -2,31 +2,132 @@ from functools import partial
 import numpy as np
 from copy import deepcopy
 import cv2
-from utils_mudSlap import addMudSplat
+from utils_mudSlap import *
+from utils_naturalPerturbations import addFog, addRain
 
-class mudSplat:
+'''
+HELPER Functions
+'''
+def alterImages(imageList, alterFeatures = None):
     """
-    Creates a mudSplat object specified by the following properties:
-        imgPath: string
-            Directory path to the mudSplat image
-        xOffset: scalar (int)
-            Offset value in X-Dimension where the splat should be placed
-        yOffset: scalar (int)
-            Offset value in Y-Dimension where the splat should be placed
-        scale: scalar (float) (0-100)
-            Specifies how much big the mud splat should be in reference to the
-            size of original image (e.g.: if scaleParam==100: the splat will be
-            almost equal to the size of original image); values are by default
-            clipped between 0 and 100
-        rotate: scalar (float) (0-360)
-            Specifies how much to rotate the original image by (in degrees)
+    Given a feature vector of alterations (as described below), alters a set of
+    images accordingly
+    
+    Arguments:
+    -----------
+        imageList: np.ndarray (numImages, Width, Height, numChannels)
+            List of images on which alterations are required to be added
+        alterFeatures: List [<mudSplat1>, <mudSplat2>, <mudSplat3>, <rain>, <fog>]
+            List of features to explain modifications in the order as defined above.
+            Further explanations of each component as follows:
+                <mudSplat1> : [mudSpaltObject]
+                <mudSplat2> : [mudSpaltObject]
+                <mudSplat3> : [mudSpaltObject]
+                <rain>      : [randomSeed]
+                <fog>       : [fogIntensity, randomSeed]
+    Returns:
+    -----------
+        outImgs: np.ndarray (numImages, Width, Height, numChannels)
+            The list of transformed output images with 'alterFeatures' effects
     """
-    def __init__(self, imgPath, xOffset, yOffset, scale, rotate):
-        self.imgPath = imgPath
-        self.xOffset = xOffset
-        self.yOffset = yOffset
-        self.scale   = scale
-        self.rotate  = rotate
+    if len(imageList.shape)==3:
+        imageList = np.expand_dims(imageList, axis=0)
+    numImgs = imageList.shape[0]
+    W = imageList.shape[1]
+    H = imageList.shape[2]
+    nCh = imageList.shape[3]
+    if alterFeatures is not None:
+        mudObj1  = alterFeatures[0]
+        mudObj2  = alterFeatures[1]
+        mudObj3  = alterFeatures[2]
+        rainSeed = alterFeatures[3]
+        fogInten = alterFeatures[4]
+        fogSeed  = alterFeatures[5]
+
+        allSplatImg = combineSplats([mudObj1]+[mudObj2]+[mudObj3], W, H).astype('uint8')
+        splatImgs = np.zeros(imageList.shape)
+        for i, image in enumerate(imageList):
+            splatImgs[i, ...] = addMudSplat(image, allSplatImg)
+        outImgs = addRain(addFog(splatImgs, fogInten, int(fogSeed)), int(rainSeed))
+    else:
+        outImgs = imageList
+    return outImgs
+
+def predictModel_Nparticles(originalImages, originalClass, targetClass,
+                         model, alterFeatures = None):
+    """
+    Adds a mud splat on the original image according to the specified feature
+    vector and then predict its class using the trained model.
+
+    Arguments:
+    -----------
+        originalImages: np.ndarray (numImages, Width, Height, numChannels)
+            List of original images (without any perturbations)
+        originalClass: scalar (int) {0,1,2}
+            Original Class label specified as follows:
+                turnLeft: 0
+                turnRight: 1
+                goStraight: 2
+        targetClass: scalar (int) {0,1,2}
+            Target Class (aiming to misclassify) label specified as follows:
+                turnLeft: 0
+                turnRight: 1
+                goStraight: 2
+        trainedModelWeightsPath: Keras Model Object
+            Previously Trained Model Object
+        alterFeatures: List [[<mudSplat1>, <mudSplat2>, <mudSplat3>, <rain>, <fog>]]
+            List of list of features to explain modifications in the order as defined above.
+            **Must be either of length 1 or equal to the number of originalImages or None.
+            Further explanations of each component as follows:
+                <mudSplat1> : [mudSpaltObject]
+                <mudSplat2> : [mudSpaltObject]
+                <mudSplat3> : [mudSpaltObject]
+                <rain>      : [randomSeed]
+                <fog>       : [fogIntensity, randomSeed]
+    Returns:
+    -----------
+        predScore: Classify predictions w.r.t. original and target classes and
+            give score according to the following scheme:
+                2   : if predicted class == original class (correct prediction)
+                0   : if predicted class == target class (incorrect prediction -
+                                                          target matched)
+                1   : if predicted class == any other class (incorrect prediction -
+                                                             target mismatched)
+            The scores for all images are then added to produce final score
+        predOutput: list of predictions
+            The transformed output image with mud-splat on it
+    """
+    print("Starting to alter images...")
+    if len(originalImages.shape)==3:
+        originalImages = np.expand_dims(originalImages, axis=0)
+    numImgs = originalImages.shape[0]
+    W = originalImages.shape[1]
+    H = originalImages.shape[2]
+    nCh = originalImages.shape[3]
+
+    if alterFeatures is None:
+        raise Exception('alterFeatures not provided for any particle')
+    else:
+        numFinImages = numImgs*len(alterFeatures)
+        finImages = np.zeros((numFinImages, W, H, nCh))
+        for n, feature in enumerate(alterFeatures):
+            finImages[n*numImgs:(n+1)*numImgs, ...] = alterImages(originalImages, feature)
+        print("Alteration process is success. Proceeding to model predictions.")
+        predOutput = model.predict(finImages)
+
+    predScore = np.zeros(len(alterFeatures))
+    for n in range(len(alterFeatures)):
+        for outputs in predOutput[n*numImgs:(n+1)*numImgs]:
+            if np.any(np.argmax(outputs) == originalClass):
+                predScore[n] += 2
+            elif np.any(np.argmax(outputs) == targetClass):
+                predScore[n] += 0
+            else:
+                predScore[n] += 1
+    print("Predictions made and scores calculated. Returning handle back to PSO.")
+    print("For reference, scores are:")
+    print(predScore)
+    return predScore, predOutput
 
 def  predictModelMudSplat_Nparticles(originalImages, originalClass, targetClass,
                          model, mudSplatObjects = None):
@@ -239,11 +340,15 @@ def pso(func, lb, ub, ieqcons=[], f_ieqcons=None, args=(), kwargs={},
         fs = np.array(mp_pool.map(is_feasible, x))
     else:
         imgData, oriClass, tarClass, mudImgPath, model = args
-        mudObjs = []
+        allFeatures = []
         for i in range(S):
-            xOffset, yOffset, scale, rotate = x[i, :]
-            mudObjs.append(mudSplat(mudImgPath, xOffset, yOffset, scale, rotate))
-        fx = predictModelMudSplat_Nparticles(imgData, oriClass, tarClass, model, mudObjs)[0]
+            mudSplatObject1 = mudSplat(mudImgPath, int(x[i,0]), int(x[i,1]), x[i,2], x[i,3])
+            mudSplatObject2 = mudSplat(mudImgPath, int(x[i,4]), int(x[i,5]), x[i,6], x[i,7])
+            mudSplatObject3 = mudSplat(mudImgPath, int(x[i,8]), int(x[i,9]), x[i,10], x[i,11])
+            rainFeatures    = [int(x[i,12])]
+            fogFeatures     = [x[i,13], int(x[i,14])]
+            allFeatures.append([mudSplatObject1] + [mudSplatObject2] + [mudSplatObject3] + rainFeatures + fogFeatures)
+        fx = predictModel_Nparticles(imgData, oriClass, tarClass, model, allFeatures)[0]
 
         for i in range(S):
             #fx[i] = obj(x[i, :])
@@ -288,11 +393,15 @@ def pso(func, lb, ub, ieqcons=[], f_ieqcons=None, args=(), kwargs={},
             fs = np.array(mp_pool.map(is_feasible, x))
         else:
             imgData, oriClass, tarClass, mudImgPath, model = args
-            mudObjs = []
+            allFeatures = []
             for i in range(S):
-                xOffset, yOffset, scale, rotate = x[i, :]
-                mudObjs.append(mudSplat(mudImgPath, xOffset, yOffset, scale, rotate))
-            fx = predictModelMudSplat_Nparticles(imgData, oriClass, tarClass, model, mudObjs)[0]
+                mudSplatObject1 = mudSplat(mudImgPath, int(x[i,0]), int(x[i,1]), x[i,2], x[i,3])
+                mudSplatObject2 = mudSplat(mudImgPath, int(x[i,4]), int(x[i,5]), x[i,6], x[i,7])
+                mudSplatObject3 = mudSplat(mudImgPath, int(x[i,8]), int(x[i,9]), x[i,10], x[i,11])
+                rainFeatures    = [int(x[i,12])]
+                fogFeatures     = [x[i,13], int(x[i,14])]
+                allFeatures.append([mudSplatObject1] + [mudSplatObject2] + [mudSplatObject3] + rainFeatures + fogFeatures)
+            fx = predictModel_Nparticles(imgData, oriClass, tarClass, model, allFeatures)[0]
 
             for i in range(S):
                 #fx[i] = obj(x[i, :])

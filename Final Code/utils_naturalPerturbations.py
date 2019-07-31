@@ -129,7 +129,7 @@ def addFog(imageList, fogIntensity=0.8, randomSeed=10):
     nCh = imageList.shape[3]
     
     perlin = scaleTo8Bit(generatePerlin(W, H, randomSeed))
-    cv2.imwrite('perlinFog.png', perlin)
+    #cv2.imwrite('perlinFog.png', perlin)
     fogImgs = np.zeros((numImgs,W,H,nCh))
     for n in range(nCh):
         fogImgs[:,:,:,n] = np.add((fogIntensity*perlin), np.multiply(1-(fogIntensity*perlin/255), imageList[:,:,:,n]))
@@ -166,7 +166,7 @@ def addRain(imageList, randomSeed=10, mode='withMist'):
         if (mode=='withMist'):
             image[:,:,:3] = cv2.GaussianBlur(image[:,:,:3], (5,5), 5)
         perlin = generatePerlin(W, H, randomSeed)
-        cv2.imwrite('perlinRain.png', perlin)
+        #cv2.imwrite('perlinRain.png', perlin)
         perlin_thr = cv2.threshold(perlin,127,255,cv2.THRESH_BINARY_INV)[1]
         alpha = perlin_thr==255
         alpha = 255*alpha.astype(int)
