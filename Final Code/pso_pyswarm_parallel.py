@@ -41,14 +41,19 @@ def alterImages(imageList, alterFeatures = None):
         mudObj2  = alterFeatures[1]
         mudObj3  = alterFeatures[2]
         rainSeed = alterFeatures[3]
-        fogInten = alterFeatures[4]
-        fogSeed  = alterFeatures[5]
+        rainExt  = alterFeatures[4]
+        fogInten = alterFeatures[5]
+        fogSeed  = alterFeatures[6]
 
         allSplatImg = combineSplats([mudObj1]+[mudObj2]+[mudObj3], W, H).astype('uint8')
+        allSplatImg[:,:,:-1][allSplatImg[:,:,:-1]==0] = 255
         splatImgs = np.zeros(imageList.shape)
         for i, image in enumerate(imageList):
             splatImgs[i, ...] = addMudSplat(image, allSplatImg)
-        outImgs = addRain(addFog(splatImgs, fogInten, int(fogSeed)), int(rainSeed))
+        if np.ceil(rainExt)>0:
+            outImgs = addRain(addFog(splatImgs, fogInten, int(fogSeed)), int(rainSeed))
+        else:
+            outImgs = addFog(splatImgs, fogInten, int(fogSeed))
     else:
         outImgs = imageList
     return outImgs
@@ -128,7 +133,7 @@ def predictModel_Nparticles(originalImages, originalClass, targetClass,
     print("For reference, scores are:")
     print(predScore)
     return predScore, predOutput
-
+'''
 def  predictModelMudSplat_Nparticles(originalImages, originalClass, targetClass,
                          model, mudSplatObjects = None):
     """
@@ -198,7 +203,7 @@ def  predictModelMudSplat_Nparticles(originalImages, originalClass, targetClass,
     print("Here Too")
     print(predScore)
     return predScore, predOutput
-
+'''
 def _obj_wrapper(func, args, kwargs, x):
     return func(x, *args, **kwargs)
 
@@ -290,7 +295,7 @@ def pso(func, lb, ub, ieqcons=[], f_ieqcons=None, args=(), kwargs={},
     assert hasattr(func, '__call__'), 'Invalid function handle'
     lb = np.array(lb)
     ub = np.array(ub)
-    assert np.all(ub>lb), 'All upper-bound values must be greater than lower-bound values'
+    assert np.all(ub>=lb), 'All upper-bound values must be greater than or equal to lower-bound values'
 
     vhigh = np.abs(ub - lb)
     vlow = -vhigh
@@ -345,8 +350,8 @@ def pso(func, lb, ub, ieqcons=[], f_ieqcons=None, args=(), kwargs={},
             mudSplatObject1 = mudSplat(mudImgPath, int(x[i,0]), int(x[i,1]), x[i,2], x[i,3])
             mudSplatObject2 = mudSplat(mudImgPath, int(x[i,4]), int(x[i,5]), x[i,6], x[i,7])
             mudSplatObject3 = mudSplat(mudImgPath, int(x[i,8]), int(x[i,9]), x[i,10], x[i,11])
-            rainFeatures    = [int(x[i,12])]
-            fogFeatures     = [x[i,13], int(x[i,14])]
+            rainFeatures    = [int(x[i,12]), np.ceil(x[i,13])]
+            fogFeatures     = [x[i,14], int(x[i,15])]
             allFeatures.append([mudSplatObject1] + [mudSplatObject2] + [mudSplatObject3] + rainFeatures + fogFeatures)
         fx = predictModel_Nparticles(imgData, oriClass, tarClass, model, allFeatures)[0]
 
@@ -373,6 +378,8 @@ def pso(func, lb, ub, ieqcons=[], f_ieqcons=None, args=(), kwargs={},
     v = vlow + np.random.rand(S, D)*(vhigh - vlow)
 
     # Iterate until termination criterion met ##################################
+    fg_history = []
+    fg_history.append(fg)
     it = 1
     while it <= maxiter:
         rp = np.random.uniform(size=(S, D))
@@ -398,8 +405,8 @@ def pso(func, lb, ub, ieqcons=[], f_ieqcons=None, args=(), kwargs={},
                 mudSplatObject1 = mudSplat(mudImgPath, int(x[i,0]), int(x[i,1]), x[i,2], x[i,3])
                 mudSplatObject2 = mudSplat(mudImgPath, int(x[i,4]), int(x[i,5]), x[i,6], x[i,7])
                 mudSplatObject3 = mudSplat(mudImgPath, int(x[i,8]), int(x[i,9]), x[i,10], x[i,11])
-                rainFeatures    = [int(x[i,12])]
-                fogFeatures     = [x[i,13], int(x[i,14])]
+                rainFeatures    = [int(x[i,12]), np.ceil(x[i,13])]
+                fogFeatures     = [x[i,14], int(x[i,15])]
                 allFeatures.append([mudSplatObject1] + [mudSplatObject2] + [mudSplatObject3] + rainFeatures + fogFeatures)
             fx = predictModel_Nparticles(imgData, oriClass, tarClass, model, allFeatures)[0]
 
@@ -442,6 +449,7 @@ def pso(func, lb, ub, ieqcons=[], f_ieqcons=None, args=(), kwargs={},
 
         if debug:
             print('Best after iteration {:}: {:} {:}'.format(it, g, fg))
+        fg_history.append(fg)
         it += 1
 
     print('Stopping search: maximum iterations reached --> {:}'.format(maxiter))
@@ -449,6 +457,6 @@ def pso(func, lb, ub, ieqcons=[], f_ieqcons=None, args=(), kwargs={},
     if not is_feasible(g):
         print("However, the optimization couldn't find a feasible design. Sorry")
     if particle_output:
-        return g, fg, p, fp
+        return g, fg, fg_history, p, fp
     else:
-        return g, fg
+        return g, fg, fg_history

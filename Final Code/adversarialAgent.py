@@ -19,6 +19,11 @@ from pso_pyswarm_parallel import pso
 from utils_mudSlap import *
 from utils_naturalPerturbations import addRain, addFog
 
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+plt.rcParams['figure.figsize'] = (7,7) # Make the figures a bit bigger
+
 '''
 LOAD DATA
 '''
@@ -232,20 +237,25 @@ def alterImages(imageList, alterFeatures = None):
         mudObj2  = alterFeatures[1]
         mudObj3  = alterFeatures[2]
         rainSeed = alterFeatures[3]
-        fogInten = alterFeatures[4]
-        fogSeed  = alterFeatures[5]
+        rainExt  = alterFeatures[4]
+        fogInten = alterFeatures[5]
+        fogSeed  = alterFeatures[6]
 
         allSplatImg = combineSplats([mudObj1]+[mudObj2]+[mudObj3], W, H).astype('uint8')
+        allSplatImg[:,:,:-1][allSplatImg[:,:,:-1]==0] = 255
         splatImgs = np.zeros(imageList.shape)
         for i, image in enumerate(imageList):
-            splatImgs[i, ...] = addMudSplat(image, allSplatImg)
-        outImgs = addRain(addFog(splatImgs, fogInten, int(fogSeed)), int(rainSeed))
+            splatImgs[i, ...] = addMudSplat(image.astype('uint8'), allSplatImg)
+        if np.ceil(rainExt)>0:
+            outImgs = addRain(addFog(splatImgs, fogInten, int(fogSeed)), int(rainSeed))
+        else:
+            outImgs = addFog(splatImgs, fogInten, int(fogSeed))
     else:
         outImgs = imageList
     return outImgs
 
 def predictModel(originalImages, originalClass, targetClass,
-                         model, alterFeatures = None):
+                         model, alterFeatures = None, exportDir = None):
     """
     Adds a mud splat on the original image according to the specified feature
     vector and then predict its class using the trained model.
@@ -275,6 +285,8 @@ def predictModel(originalImages, originalClass, targetClass,
                 <mudSplat3> : [mudSpaltObject]
                 <rain>      : [randomSeed]
                 <fog>       : [fogIntensity, randomSeed]
+        exportDir: string
+            Path of directory to store correctly and incorrectly classified images
     Returns:
     -----------
         predScore: Classify predictions w.r.t. original and target classes and
@@ -297,10 +309,12 @@ def predictModel(originalImages, originalClass, targetClass,
 
     if alterFeatures is None:
         # Predict on originalImages directly
-        predOutput = model.predict(originalImages)
+        finImages = originalImages
+        predOutput = model.predict(finImages)
     elif len(alterFeatures) == 1:
         # Apply same modifications to all originalImages
-        predOutput = model.predict(alterImages(originalImages, alterFeatures[0]))
+        finImages = alterImages(originalImages, alterFeatures[0])
+        predOutput = model.predict(finImages)
     elif len(alterFeatures) == len(originalImages):
         # Apply different modification to each image in originalImages
         finImages = np.zeros(originalImages.shape)
@@ -312,14 +326,26 @@ def predictModel(originalImages, originalClass, targetClass,
 
     predScore = 0
     accuracy = 0
-    for outputs in predOutput:
+    for i, outputs in enumerate(predOutput):
         if np.any(np.argmax(outputs) == originalClass):
             predScore += 2
             accuracy += 1
+            if exportDir is not None:
+                if not os.path.exists(exportDir+'Correct Classification/'):
+                    os.makedirs(exportDir+'Correct Classification/')
+                cv2.imwrite(exportDir+'Correct Classification/'+str(i)+'.png', finImages[i,:,:,:])
         elif np.any(np.argmax(outputs) == targetClass):
             predScore += 0
+            if exportDir is not None:
+                if not os.path.exists(exportDir+'Target Classification/'):
+                    os.makedirs(exportDir+'Target Classification/')
+                cv2.imwrite(exportDir+'Target Classification/'+str(i)+'.png', finImages[i,:,:,:])
         else:
             predScore += 1
+            if exportDir is not None:
+                if not os.path.exists(exportDir+'Incorrect Classification/'):
+                    os.makedirs(exportDir+'Incorrect Classification/')
+                cv2.imwrite(exportDir+'Incorrect Classification/'+str(i)+'.png', finImages[i,:,:,:])
     return predScore, predOutput, accuracy*100/len(predOutput)
 
 '''
@@ -367,48 +393,59 @@ def pso_objective(features, *args):
 '''
 For all images in same class - TurnLeft
 '''
-numSplats = [1]
-for num in numSplats:
-    for mudImgPath in ['AdversaryImages/mudSplat2.png', 'AdversaryImages/mudSplat1.png']:
-        testTLimgs = np.zeros(np.append(len(x_turnLeft), x_turnLeft[0].shape))
-        for j, img in enumerate(x_turnLeft):
-            testTLimgs = makeObservations(img)
-            oriClass = 0
-            tarClass = 1
-            args = (np.float32(testTLimgs), oriClass, tarClass, mudImgPath, model)
-            #feature = [<mudSplat1>, <mudSplat2>, <mudSplat3>, <rain>, <fog>]
-            ms1_lb  = [0.2*args[0][0].shape[0], 0.2*args[0][0].shape[1], 15, 0]
-            ms1_ub  = [0.6*args[0][0].shape[0], 0.6*args[0][0].shape[1], 40, 360]
-            ms2_lb  = [0.2*args[0][0].shape[0], 0.2*args[0][0].shape[1], 15, 0]
-            ms2_ub  = [0.6*args[0][0].shape[0], 0.6*args[0][0].shape[1], 30, 360]
-            ms3_lb  = [0.2*args[0][0].shape[0], 0.2*args[0][0].shape[1], 15, 0]
-            ms3_ub  = [0.6*args[0][0].shape[0], 0.6*args[0][0].shape[1], 20, 360]
-            rain_lb = [0]
-            rain_ub = [(2**16)-1]
-            fog_lb  = [0, 0]
-            fog_ub  = [0.5, (2**16)-1]
-            lb = ms1_lb + ms2_lb + ms3_lb + rain_lb + fog_lb
-            ub = ms1_ub + ms2_ub + ms3_ub + rain_ub + fog_ub
-            #q_opt, f_opt = pso(pso_objective, lb, ub, args=args,
-            #                   swarmsize=100, omega=0.8, phip=2.0, phig=2.0,
-            #                   maxiter=3000, minstep=1e-8, debug=True, processes=1)
-            q_opt, f_opt = pso(pso_objective, lb, ub, args=args,
-                               swarmsize=100, omega=0.8, phip=2.0, phig=2.0,
-                               maxiter=2, minstep=1e-8, debug=True)
-            print(q_opt)
-            print(f_opt)
-            print('Hooray!')
-            f = open("PSOoutput.txt", "a+")
+folder = "PSOoutput/TurnLeft/"
+for mudId, mudImgPath in enumerate(['AdversaryImages/mudSplat2.png', 'AdversaryImages/mudSplat1.png']):
+    testTLimgs = np.zeros(np.append(len(x_turnLeft), x_turnLeft[0].shape))
+    for j, img in enumerate(x_turnLeft):
+        testTLimgs = makeObservations(img)
+        oriClass = 0
+        tarClass = 1
+        args = (np.float32(testTLimgs), oriClass, tarClass, mudImgPath, model)
+        #feature = [<mudSplat1>, <mudSplat2>, <mudSplat3>, <rain>, <fog>]
+        ms1_lb  = [0.2*args[0][0].shape[0], 0.2*args[0][0].shape[1], 15, 0]
+        ms1_ub  = [0.6*args[0][0].shape[0], 0.6*args[0][0].shape[1], 40, 360]
+        ms2_lb  = [0.2*args[0][0].shape[0], 0.2*args[0][0].shape[1], 15, 0]
+        ms2_ub  = [0.6*args[0][0].shape[0], 0.6*args[0][0].shape[1], 30, 360]
+        ms3_lb  = [0.2*args[0][0].shape[0], 0.2*args[0][0].shape[1], 15, 0]
+        ms3_ub  = [0.6*args[0][0].shape[0], 0.6*args[0][0].shape[1], 20, 360]
+        rain_lb = [0, 0]
+        rain_ub = [0, 0]
+        #rain_ub = [(2**16)-1, 1]
+        fog_lb  = [0, 0]
+        fog_ub  = [0, 0]
+        #fog_ub  = [0.5, (2**16)-1]
+        lb = ms1_lb + ms2_lb + ms3_lb + rain_lb + fog_lb
+        ub = ms1_ub + ms2_ub + ms3_ub + rain_ub + fog_ub
+        #q_opt, f_opt = pso(pso_objective, lb, ub, args=args,
+        #                   swarmsize=100, omega=0.8, phip=2.0, phig=2.0,
+        #                   maxiter=3000, minstep=1e-8, debug=True, processes=1)
+        q_opt, f_opt, f_hist = pso(pso_objective, lb, ub, args=args,
+                                    swarmsize=100, omega=0.8, phip=2.0, phig=2.0,
+                                    maxiter=50, minstep=1e-8, debug=True)
+        print(q_opt)
+        print(f_opt)
+        print('Hooray!')
+        if not os.path.exists(folder+str(j)+'_'+str(mudId)+'/'):
+            os.makedirs(folder+str(j)+'_'+str(mudId)+'/')
+        fig = plt.figure()
+        plt.plot(f_hist)
+        plt.title('Model accuracy')
+        plt.ylabel('Global Minima')
+        plt.xlabel('Iteration')
+        plt.ylim(0, 25)
+        plt.legend(['Convergence Characteristics'], loc='upper right')
+        fig.savefig(folder + str(j) + '_' + str(mudId) + '/pso_convergence.png')
+        f = open("PSOoutput.txt", "a+")
 
-            f.write("For Turn Left Class (mudImgPath: " + mudImgPath + ") - image #" + str(j) + ":\n")
-            f.write("Original Accuracy: " + str(predictModel(testTLimgs, oriClass, tarClass, model)[2]) + "\n")
-            f.write("q_opt = " + str(q_opt) + "\n")
-            f.write("f_opt = " + str(f_opt) + "\n")
-            mudSplatObject1 = mudSplat(mudImgPath, int(q_opt[0]), int(q_opt[1]), q_opt[2], q_opt[3])
-            mudSplatObject2 = mudSplat(mudImgPath, int(q_opt[4]), int(q_opt[5]), q_opt[6], q_opt[7])
-            mudSplatObject3 = mudSplat(mudImgPath, int(q_opt[8]), int(q_opt[9]), q_opt[10], q_opt[11])
-            rainFeatures    = [int(q_opt[12])]
-            fogFeatures     = [q_opt[13], int(q_opt[14])]
-            allFeatures     = [[mudSplatObject1] + [mudSplatObject2] + [mudSplatObject3] + rainFeatures + fogFeatures]
-            f.write("New Accuracy: " + str(predictModel(testTLimgs, oriClass, tarClass, model, allFeatures)[2]) + "\n\n")
-            f.close()
+        f.write("For Turn Left Class (mudImgPath: " + mudImgPath + ") - image #" + str(j) + ":\n")
+        f.write("Original Accuracy: " + str(predictModel(testTLimgs, oriClass, tarClass, model)[2]) + "\n")
+        f.write("q_opt = " + str(q_opt) + "\n")
+        f.write("f_opt = " + str(f_opt) + "\n")
+        mudSplatObject1 = mudSplat(mudImgPath, int(q_opt[0]), int(q_opt[1]), q_opt[2], q_opt[3])
+        mudSplatObject2 = mudSplat(mudImgPath, int(q_opt[4]), int(q_opt[5]), q_opt[6], q_opt[7])
+        mudSplatObject3 = mudSplat(mudImgPath, int(q_opt[8]), int(q_opt[9]), q_opt[10], q_opt[11])
+        rainFeatures    = [int(q_opt[12]), np.ceil(q_opt[13])]
+        fogFeatures     = [q_opt[14], int(q_opt[15])]
+        allFeatures     = [[mudSplatObject1] + [mudSplatObject2] + [mudSplatObject3] + rainFeatures + fogFeatures]
+        f.write("New Accuracy: " + str(predictModel(testTLimgs, oriClass, tarClass, model, allFeatures, folder+str(j)+'_'+str(mudId)+'/')[2]) + "\n\n")
+        f.close()
