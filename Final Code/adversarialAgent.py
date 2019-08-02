@@ -314,12 +314,14 @@ def predictModel(originalImages, originalClass, targetClass,
     elif len(alterFeatures) == 1:
         # Apply same modifications to all originalImages
         finImages = alterImages(originalImages, alterFeatures[0])
+        finImages = makeObservations(finImages)
         predOutput = model.predict(finImages)
     elif len(alterFeatures) == len(originalImages):
         # Apply different modification to each image in originalImages
         finImages = np.zeros(originalImages.shape)
         for i, image in enumerate(originalImages):
             finImages[i, ...] = alterImages(image, alterFeatures[i])[0]
+        finImages = makeObservations(finImages)
         predOutput = model.predict(finImages)
     else:
         raise Exception('Number of alterFeatures does not match number of images.')
@@ -448,5 +450,5 @@ for mudId, mudImgPath in enumerate(['AdversaryImages/mudSplat2.png', 'AdversaryI
         rainFeatures    = [int(q_opt[12]), np.ceil(q_opt[13])]
         fogFeatures     = [q_opt[14], int(q_opt[15])]
         allFeatures     = [[mudSplatObject1] + [mudSplatObject2] + [mudSplatObject3] + rainFeatures + fogFeatures]
-        f.write("New Accuracy: " + str(predictModel(makeObservations(testTLimgs).astype("uint8"), oriClass, tarClass, model, allFeatures, folder+str(j)+'_'+str(mudId)+'/')[2]) + "\n\n")
+        f.write("New Accuracy: " + str(predictModel(testTLimgs, oriClass, tarClass, model, allFeatures, folder+str(j)+'_'+str(mudId)+'/')[2]) + "\n\n")
         f.close()
