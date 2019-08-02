@@ -219,11 +219,11 @@ def makeObservations(imgList, mode='multi', farScale = 0.5, obliquePercentage = 
 CREATE Training and Test Data
 '''
 # Get Train Dataset
-goStraight = makeObservations(load_images_from_folder('../GTSRB Dataset/categorized&cropped - Training/35', 3000))
+goStraight = makeObservations(load_images_from_folder('../GTSRB Dataset/categorized&cropped - Training/35', 3000)).astype("uint8")
 print("shape of original goStraight", goStraight.shape)
-turnRight = makeObservations(load_images_from_folder('../GTSRB Dataset/categorized&cropped - Training/33', 3000))
+turnRight = makeObservations(load_images_from_folder('../GTSRB Dataset/categorized&cropped - Training/33', 3000)).astype("uint8")
 print("shape of original turnRight", turnRight.shape)
-turnLeft = makeObservations(load_images_from_folder('../GTSRB Dataset/categorized&cropped - Training/34', 3000))
+turnLeft = makeObservations(load_images_from_folder('../GTSRB Dataset/categorized&cropped - Training/34', 3000)).astype("uint8")
 print("shape of original turnLeft", turnLeft.shape)
 
 x_train = np.concatenate((turnLeft, turnRight, goStraight))
@@ -240,11 +240,11 @@ def shuffle_in_unison(a, b):
 shuffle_in_unison(x_train, y_train)
 
 # Get Test Dataset
-goStraight = load_images_from_folder('../GTSRB Dataset/categorized&cropped_NA - Test/35')
+goStraight = load_images_from_folder('../GTSRB Dataset/categorized&cropped_NA - Test/35').astype("uint8")
 print("shape of original goStraight", goStraight.shape)
-turnRight = load_images_from_folder('../GTSRB Dataset/categorized&cropped_NA - Test/33')
+turnRight = load_images_from_folder('../GTSRB Dataset/categorized&cropped_NA - Test/33').astype("uint8")
 print("shape of original turnRight", turnRight.shape)
-turnLeft = load_images_from_folder('../GTSRB Dataset/categorized&cropped_NA - Test/34')
+turnLeft = load_images_from_folder('../GTSRB Dataset/categorized&cropped_NA - Test/34').astype("uint8")
 print("shape of original turnLeft", turnLeft.shape)
 
 x_test = np.concatenate((turnLeft, turnRight, goStraight))
