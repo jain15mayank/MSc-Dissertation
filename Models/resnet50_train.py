@@ -240,12 +240,12 @@ def shuffle_in_unison(a, b):
 shuffle_in_unison(x_train, y_train)
 
 # Get Test Dataset
+goStraight = load_images_from_folder('../GTSRB Dataset/categorized&cropped_NA - Test/35')
+print("shape of original goStraight", goStraight.shape)
 turnRight = load_images_from_folder('../GTSRB Dataset/categorized&cropped_NA - Test/33')
 print("shape of original turnRight", turnRight.shape)
 turnLeft = load_images_from_folder('../GTSRB Dataset/categorized&cropped_NA - Test/34')
 print("shape of original turnLeft", turnLeft.shape)
-goStraight = load_images_from_folder('../GTSRB Dataset/categorized&cropped_NA - Test/35')
-print("shape of original goStraight", goStraight.shape)
 
 x_test = np.concatenate((turnLeft, turnRight, goStraight))
 y_test = np.zeros((x_test.shape[0], 3))
