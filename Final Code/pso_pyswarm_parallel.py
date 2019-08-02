@@ -485,7 +485,7 @@ def pso(func, lb, ub, ieqcons=[], f_ieqcons=None, args=(), kwargs={},
 
     # Initialize the particle's position
     x = lb + x*(ub - lb)
-    x[0,:] = [30, 50, 40, 220, 50, 50, 30, 150, 50, 20, 20, 90, 0, 0, 0, 0]
+    x[0,:] = [25, 50, 40, 220, 60, 20, 30, 150, 60, 35, 20, 90, 0, 0, 0, 0]
 
     # Calculate objective and constraints for each particle
     if processes > 1:

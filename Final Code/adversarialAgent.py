@@ -448,5 +448,5 @@ for mudId, mudImgPath in enumerate(['AdversaryImages/mudSplat2.png', 'AdversaryI
         rainFeatures    = [int(q_opt[12]), np.ceil(q_opt[13])]
         fogFeatures     = [q_opt[14], int(q_opt[15])]
         allFeatures     = [[mudSplatObject1] + [mudSplatObject2] + [mudSplatObject3] + rainFeatures + fogFeatures]
-        f.write("New Accuracy: " + str(predictModel(testTLimgs, oriClass, tarClass, model, allFeatures, folder+str(j)+'_'+str(mudId)+'/')[2]) + "\n\n")
+        f.write("New Accuracy: " + str(predictModel(makeObservations(testTLimgs).astype("uint8"), oriClass, tarClass, model, allFeatures, folder+str(j)+'_'+str(mudId)+'/')[2]) + "\n\n")
         f.close()
