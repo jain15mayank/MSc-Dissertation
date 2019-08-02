@@ -485,7 +485,7 @@ def pso(func, lb, ub, ieqcons=[], f_ieqcons=None, args=(), kwargs={},
 
     # Initialize the particle's position
     x = lb + x*(ub - lb)
-    x[0,:] = [25, 50, 40, 220, 60, 20, 30, 150, 60, 35, 20, 90, 0, 0, 0, 0]
+    x[-1,:] = [25, 50, 40, 220, 55, 20, 30, 150, 60, 40, 20, 90, 0, 0, 0, 0]
     x[:,2] = 40
     x[:,6] = 30
     x[:,10]= 20
