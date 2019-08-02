@@ -538,13 +538,15 @@ def pso(func, lb, ub, ieqcons=[], f_ieqcons=None, args=(), kwargs={},
 
         # Update the particles velocities
         v = omega*v + phip*rp*(p - x) + phig*rg*(g - x)
+        
         # Update the particles' positions
         x = x + v
+
         # Correct for bound violations
         maskl = x < lb
         masku = x > ub
         x = x*(~np.logical_or(maskl, masku)) + lb*maskl + ub*masku
-
+        
         # Update objectives and constraints
         if processes > 1:
             fx = np.array(mp_pool.map(obj, x))
@@ -553,14 +555,15 @@ def pso(func, lb, ub, ieqcons=[], f_ieqcons=None, args=(), kwargs={},
             imgData, oriClass, tarClass, mudImgPath, model = args
             allFeatures = []
             for i in range(S):
-                mudSplatObject1 = mudSplat(mudImgPath, int(x[i,0]), int(x[i,1]), x[i,2], x[i,3])
-                mudSplatObject2 = mudSplat(mudImgPath, int(x[i,4]), int(x[i,5]), x[i,6], x[i,7])
-                mudSplatObject3 = mudSplat(mudImgPath, int(x[i,8]), int(x[i,9]), x[i,10], x[i,11])
-                rainFeatures    = [int(x[i,12]), np.ceil(x[i,13])]
-                fogFeatures     = [x[i,14], int(x[i,15])]
+                X = deepcopy(x[i,:])
+                mudSplatObject1 = mudSplat(mudImgPath, int(X[0]), int(X[1]), X[2], X[3])
+                mudSplatObject2 = mudSplat(mudImgPath, int(X[4]), int(X[5]), X[6], X[7])
+                mudSplatObject3 = mudSplat(mudImgPath, int(X[8]), int(X[9]), X[10], X[11])
+                rainFeatures    = [int(X[12]), np.ceil(X[13])]
+                fogFeatures     = [X[14], int(X[15])]
                 allFeatures.append([mudSplatObject1] + [mudSplatObject2] + [mudSplatObject3] + rainFeatures + fogFeatures)
             fx = predictModel_Nparticles(imgData, oriClass, tarClass, model, allFeatures)[0]
-
+            
             for i in range(S):
                 #fx[i] = obj(x[i, :])
                 fs[i] = is_feasible(x[i, :])
