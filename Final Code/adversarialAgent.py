@@ -352,11 +352,11 @@ def predictModel(originalImages, originalClass, targetClass,
 CREATE Dataset
 '''
 folder = '../GTSRB Dataset/categorized&cropped_NA/'
-turnRight = load_images_from_folder(folder + '33')
+turnRight = load_images_from_folder(folder + '33').astype("uint8")
 print("shape of original turnRight", turnRight.shape)
-turnLeft = load_images_from_folder(folder + '34')
+turnLeft = load_images_from_folder(folder + '34').astype("uint8")
 print("shape of original turnLeft", turnLeft.shape)
-goStraight = load_images_from_folder(folder + '35')
+goStraight = load_images_from_folder(folder + '35').astype("uint8")
 print("shape of original goStraight", goStraight.shape)
 
 x_complete = np.concatenate((turnLeft, turnRight, goStraight))
@@ -397,10 +397,11 @@ folder = "PSOoutput/TurnLeft/"
 for mudId, mudImgPath in enumerate(['AdversaryImages/mudSplat2.png', 'AdversaryImages/mudSplat1.png']):
     testTLimgs = np.zeros(np.append(len(x_turnLeft), x_turnLeft[0].shape))
     for j, img in enumerate(x_turnLeft):
-        testTLimgs = makeObservations(img)
+        #testTLimgs = makeObservations(img)
+        testTLimgs = img.astype("uint8")
         oriClass = 0
         tarClass = 1
-        args = (np.float32(testTLimgs), oriClass, tarClass, mudImgPath, model)
+        args = (np.uint8(testTLimgs), oriClass, tarClass, mudImgPath, model)
         #feature = [<mudSplat1>, <mudSplat2>, <mudSplat3>, <rain>, <fog>]
         ms1_lb  = [0.2*args[0][0].shape[0], 0.2*args[0][0].shape[1], 15, 0]
         ms1_ub  = [0.6*args[0][0].shape[0], 0.6*args[0][0].shape[1], 40, 360]
