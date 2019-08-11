@@ -38,7 +38,7 @@ def load_images_from_folder(folder, maxImg=None):
       break
   # Create empty numpy array for all the images to come
   images = np.empty((len(os.listdir(folder)), img.shape[0], img.shape[1], img.shape[2]), dtype=np.float32)
-  
+
   # Iterate over all filenames to fill in the images array
   for i, filename in enumerate(os.listdir(folder)):
     img = cv2.imread(os.path.join(folder,filename))
@@ -92,7 +92,8 @@ def makeObservations(imgList, mode='multi', farScale = 0.5, obliquePercentage = 
     if mode=='multi':
         obliquePercentages = [20, 30]
         farScales = [1, 0.25]
-        newImgList = np.zeros((numImgs*((2*len(obliquePercentages))+1)*len(farScales), imgRows, imgCols, nChannels))
+        increaseFactor = ((2*len(obliquePercentages))+1)*len(farScales)
+        newImgList = np.zeros((numImgs*increaseFactor, imgRows, imgCols, nChannels))
         i = 0
         for img in imgList:
             for fS in farScales:
@@ -122,7 +123,7 @@ def makeObservations(imgList, mode='multi', farScale = 0.5, obliquePercentage = 
                     M = cv2.getPerspectiveTransform(src, dst)
                     warped = cv2.warpPerspective(img, M, (imgRows, imgCols))
                     #warped = warped[:, int(XobliquePixels):int(imgRows - XobliquePixels - 1)]
-                    warped = warped[int(oP*YobliquePixels/100):int(imgCols - (oP*YobliquePixels/100) - 1), 
+                    warped = warped[int(oP*YobliquePixels/100):int(imgCols - (oP*YobliquePixels/100) - 1),
                                 int(XobliquePixels):int(imgRows - XobliquePixels - 1)]
                     warped = cv2.resize(warped, (imgRows, imgCols))
                     img1 = cv2.resize(warped, (int(imgRows*fS), int(imgCols*fS)))
@@ -148,7 +149,7 @@ def makeObservations(imgList, mode='multi', farScale = 0.5, obliquePercentage = 
                     # compute the perspective transform matrix and then apply it
                     M = cv2.getPerspectiveTransform(src, dst)
                     warped = cv2.warpPerspective(img, M, (imgRows, imgCols))
-                    warped = warped[int(oP*YobliquePixels/100):int(imgCols - (oP*YobliquePixels/100) - 1), 
+                    warped = warped[int(oP*YobliquePixels/100):int(imgCols - (oP*YobliquePixels/100) - 1),
                                 int(XobliquePixels):int(imgRows - XobliquePixels - 1)]
                     warped = cv2.resize(warped, (imgRows, imgCols))
                     img1 = cv2.resize(warped, (int(imgRows*fS), int(imgCols*fS)))
@@ -158,6 +159,7 @@ def makeObservations(imgList, mode='multi', farScale = 0.5, obliquePercentage = 
                     i+=1
     else:
         newImgList = np.zeros((numImgs, imgRows, imgCols, nChannels))
+        increaseFactor = 1
         i = 0
         for img in imgList:
             XobliquePixels = obliquePercentage*imgRows/100
@@ -191,7 +193,7 @@ def makeObservations(imgList, mode='multi', farScale = 0.5, obliquePercentage = 
             # compute the perspective transform matrix and then apply it
             M = cv2.getPerspectiveTransform(src, dst)
             warped = cv2.warpPerspective(img, M, (imgRows, imgCols))
-            warped = warped[int(obliquePercentage*YobliquePixels/100):int(imgCols - (obliquePercentage*YobliquePixels/100) - 1), 
+            warped = warped[int(obliquePercentage*YobliquePixels/100):int(imgCols - (obliquePercentage*YobliquePixels/100) - 1),
                         int(XobliquePixels):int(imgRows - XobliquePixels - 1)]
             warped = cv2.resize(warped, (imgRows, imgCols))
             img1 = cv2.resize(warped, (int(imgRows*farScale), int(imgCols*farScale)))
@@ -199,16 +201,16 @@ def makeObservations(imgList, mode='multi', farScale = 0.5, obliquePercentage = 
             img1 = cv2.GaussianBlur(img1, (5,5), 0)
             newImgList[i, ...] = img1
             i+=1
-    return newImgList
+    return newImgList, increaseFactor
 
 '''
 HELPER Functions
 '''
-def alterImages(imageList, alterFeatures = None):
+def alterImages(imageList, alterFeatures = None, withRain = True):
     """
     Given a feature vector of alterations (as described below), alters a set of
     images accordingly
-    
+
     Arguments:
     -----------
         imageList: np.ndarray (numImages, Width, Height, numChannels)
@@ -219,8 +221,10 @@ def alterImages(imageList, alterFeatures = None):
                 <mudSplat1> : [mudSpaltObject]
                 <mudSplat2> : [mudSpaltObject]
                 <mudSplat3> : [mudSpaltObject]
-                <rain>      : [randomSeed]
+                <rain>      : [randomSeed, rainy]
                 <fog>       : [fogIntensity, randomSeed]
+        withRain: boolean
+            If False, will ignore the rain features
     Returns:
     -----------
         outImgs: np.ndarray (numImages, Width, Height, numChannels)
@@ -241,15 +245,35 @@ def alterImages(imageList, alterFeatures = None):
         fogInten = alterFeatures[5]
         fogSeed  = alterFeatures[6]
 
-        allSplatImg = combineSplats([mudObj1]+[mudObj2]+[mudObj3], W, H).astype('uint8')
-        allSplatImg[:,:,:-1][allSplatImg[:,:,:-1]==0] = 255
-        splatImgs = np.zeros(imageList.shape)
-        for i, image in enumerate(imageList):
-            splatImgs[i, ...] = addMudSplat(image.astype('uint8'), allSplatImg)
-        if np.ceil(rainExt)>0:
-            outImgs = addRain(addFog(splatImgs, fogInten, int(fogSeed)), int(rainSeed))
+        if mudObj1.scale>0 and mudObj2.scale>0 and mudObj3.scale>0:
+            allSplatImg = combineSplats([mudObj1]+[mudObj2]+[mudObj3], W, H).astype('uint8')
+            allSplatImg[:,:,:-1][allSplatImg[:,:,:-1]==0] = 255
+            splatImgs = np.zeros(imageList.shape)
+            for i, image in enumerate(imageList):
+                splatImgs[i, ...] = addMudSplat(image, allSplatImg)
+        elif mudObj1.scale>0 and mudObj2.scale>0:
+            allSplatImg = combineSplats([mudObj1]+[mudObj2], W, H).astype('uint8')
+            allSplatImg[:,:,:-1][allSplatImg[:,:,:-1]==0] = 255
+            splatImgs = np.zeros(imageList.shape)
+            for i, image in enumerate(imageList):
+                splatImgs[i, ...] = addMudSplat(image, allSplatImg)
+        elif mudObj1.scale>0:
+            allSplatImg = combineSplats([mudObj1], W, H).astype('uint8')
+            allSplatImg[:,:,:-1][allSplatImg[:,:,:-1]==0] = 255
+            splatImgs = np.zeros(imageList.shape)
+            for i, image in enumerate(imageList):
+                splatImgs[i, ...] = addMudSplat(image, allSplatImg)
         else:
+            splatImgs = imageList
+
+        if np.ceil(rainExt)>0 and withRain and np.ceil(fogInten)>0:
+            outImgs = addRain(addFog(splatImgs, fogInten, int(fogSeed)), int(rainSeed))
+        elif np.ceil(rainExt)>0 and withRain:
+            outImgs = addRain(splatImgs, int(rainSeed))
+        elif np.ceil(fogInten)>0:
             outImgs = addFog(splatImgs, fogInten, int(fogSeed))
+        else:
+            outImgs = splatImgs
     else:
         outImgs = imageList
     return outImgs
@@ -283,7 +307,7 @@ def predictModel(originalImages, originalClass, targetClass,
                 <mudSplat1> : [mudSpaltObject]
                 <mudSplat2> : [mudSpaltObject]
                 <mudSplat3> : [mudSpaltObject]
-                <rain>      : [randomSeed]
+                <rain>      : [randomSeed, rainy]
                 <fog>       : [fogIntensity, randomSeed]
         exportDir: string
             Path of directory to store correctly and incorrectly classified images
@@ -313,15 +337,22 @@ def predictModel(originalImages, originalClass, targetClass,
         predOutput = model.predict(finImages)
     elif len(alterFeatures) == 1:
         # Apply same modifications to all originalImages
-        finImages = alterImages(originalImages, alterFeatures[0])
-        finImages = makeObservations(finImages)
+        finImages = alterImages(originalImages, alterFeatures[0], False)
+        finImages, increaseFactor = makeObservations(finImages)
+        if np.ceil(alterFeatures[0][4])>0:
+            finImages = addRain(finImages.astype("float64"), int(alterFeatures[0][3]))
+        finImages = np.uint8(finImages)
         predOutput = model.predict(finImages)
     elif len(alterFeatures) == len(originalImages):
         # Apply different modification to each image in originalImages
         finImages = np.zeros(originalImages.shape)
         for i, image in enumerate(originalImages):
-            finImages[i, ...] = alterImages(image, alterFeatures[i])[0]
-        finImages = makeObservations(finImages)
+            finImages[i, ...] = alterImages(image, alterFeatures[i], False)[0]
+        finImages, increaseFactor = makeObservations(finImages)
+        for i, image in enumerate(originalImages):
+            if np.ceil(alterFeatures[i][4])>0:
+                finImages[i*increaseFactor:(i+1)*increaseFactor, ...] = addRain(finImages[i*increaseFactor:(i+1)*increaseFactor, ...].astype("float64"), int(alterFeatures[i][3]))
+        finImages = np.uint8(finImages)
         predOutput = model.predict(finImages)
     else:
         raise Exception('Number of alterFeatures does not match number of images.')
@@ -379,23 +410,32 @@ for mudId, mudImgPath in enumerate(['../AdversaryImages/mudSplat2.png', '../Adve
     testTLimgs = np.zeros(np.append(len(x_turnLeft), x_turnLeft[0].shape))
     for j, img in enumerate([x_turnLeft[0]]):
         #testTLimgs = makeObservations(img)
-        testTLimgs = img.astype("uint8")
+        testTLimgs = img
         oriClass = 0
         tarClass = 1
         args = (np.uint8(testTLimgs), oriClass, tarClass, mudImgPath, model)
         #feature = [<mudSplat1>, <mudSplat2>, <mudSplat3>, <rain>, <fog>]
+
+        ms1_lb  = [0, 0, 0, 0]
+        ms1_ub  = [0, 0, 0, 0]
+        ms2_lb  = [0, 0, 0, 0]
+        ms2_ub  = [0, 0, 0, 0]
+        ms3_lb  = [0, 0, 0, 0]
+        ms3_ub  = [0, 0, 0, 0]
+        '''
         ms1_lb  = [0.2*args[0][0].shape[0], 0.2*args[0][0].shape[1], 15, 0]
         ms1_ub  = [0.6*args[0][0].shape[0], 0.6*args[0][0].shape[1], 40, 360]
         ms2_lb  = [0.2*args[0][0].shape[0], 0.2*args[0][0].shape[1], 15, 0]
         ms2_ub  = [0.6*args[0][0].shape[0], 0.6*args[0][0].shape[1], 30, 360]
         ms3_lb  = [0.2*args[0][0].shape[0], 0.2*args[0][0].shape[1], 15, 0]
         ms3_ub  = [0.6*args[0][0].shape[0], 0.6*args[0][0].shape[1], 20, 360]
+        '''
         rain_lb = [0, 0]
-        rain_ub = [0, 0]
-        #rain_ub = [(2**16)-1, 1]
+        #rain_ub = [0, 0]
+        rain_ub = [(2**16)-1, 1]
         fog_lb  = [0, 0]
-        fog_ub  = [0, 0]
-        #fog_ub  = [0.5, (2**16)-1]
+        #fog_ub  = [0, 0]
+        fog_ub  = [0.5, (2**16)-1]
         lb = ms1_lb + ms2_lb + ms3_lb + rain_lb + fog_lb
         ub = ms1_ub + ms2_ub + ms3_ub + rain_ub + fog_ub
         #q_opt, f_opt = pso(pso_objective, lb, ub, args=args,
@@ -403,7 +443,7 @@ for mudId, mudImgPath in enumerate(['../AdversaryImages/mudSplat2.png', '../Adve
         #                   maxiter=3000, minstep=1e-8, debug=True, processes=1)
         q_opt, f_opt, f_hist = pso(pso_objective, lb, ub, args=args,
                                     swarmsize=100, omega=0.8, phip=2.0, phig=2.0,
-                                    maxiter=50, minstep=1e-8, debug=True)
+                                    maxiter=50, minstep=1e-8, debug=True, abs_min=0)
         print(q_opt)
         print(f_opt)
         print('Hooray!')

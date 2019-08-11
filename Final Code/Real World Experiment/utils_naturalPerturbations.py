@@ -42,24 +42,24 @@ def noise2d(x, y, gradtable, W, H):
     y0 = math.floor(y)
     x1 = x0 + 1.0
     y1 = y0 + 1.0
-    
+
     i_x0 = int(x0)
     i_x1 = int(x1)
     i_y0 = int(y0)
     i_y1 = int(y1)
-    
+
     s = dot(gradient(i_x0, i_y0, gradtable, W, H),(x-x0, y-y0))
     t = dot(gradient(i_x1, i_y0, gradtable, W, H),(x-x1, y-y0))
     u = dot(gradient(i_x0, i_y1, gradtable, W, H),(x-x0, y-y1))
     v = dot(gradient(i_x1, i_y1, gradtable, W, H),(x-x1, y-y1))
-    
+
     s_x = s_curve( x - x0 )
     a = s + s_x*t - s_x*s
     b = u + s_x*v - s_x*u
-    
+
     s_y = s_curve( y - y0 )
     z = a + s_y*b - s_y*a
-    
+
     return z
 
 def col( a ):
@@ -68,25 +68,25 @@ def col( a ):
 def scaleTo8Bit(image, displayMin = None, displayMax=None ):
     if displayMin == None:
         displayMin = np.min(image)
-    
+
     if displayMax == None:
         displayMax = np.max(image)
-    
+
     np.clip(image, displayMin, displayMax, out=image)
-    
+
     image = image - displayMin
     cf = 255. / (displayMax - displayMin)
     imageOut = ( cf * image).astype(np.uint8)
-    
+
     return imageOut
 
 def generatePerlin(W, H, randomSeed):
     gradtable = [ (0,0) for i in range(0,W*H) ]
-    
+
     gradtable = precalc_gradtable(gradtable, W, H, randomSeed)
-    
+
     perlin = np.zeros((W,H))
-    
+
     zoom_x = 0.2
     zoom_y = 0.2
     x = 0.0
@@ -104,7 +104,7 @@ def generatePerlin(W, H, randomSeed):
 def addFog(imageList, fogIntensity=0.8, randomSeed=10):
     """
     Adds foggy effect to the image given as input.
-    
+
     Arguments:
     -----------
         imageList: np.ndarray (numImages, Width, Height, numChannels)
@@ -127,7 +127,7 @@ def addFog(imageList, fogIntensity=0.8, randomSeed=10):
     W = imageList.shape[1]
     H = imageList.shape[2]
     nCh = imageList.shape[3]
-    
+
     perlin = scaleTo8Bit(generatePerlin(W, H, randomSeed))
     #cv2.imwrite('perlinFog.png', perlin)
     fogImgs = np.zeros((numImgs,W,H,nCh))
@@ -135,10 +135,10 @@ def addFog(imageList, fogIntensity=0.8, randomSeed=10):
         fogImgs[:,:,:,n] = np.add((fogIntensity*perlin), np.multiply(1-(fogIntensity*perlin/255), imageList[:,:,:,n]))
     return fogImgs.astype('uint8')
 
-def addRain(imageList, randomSeed=10, mode='withMist'):
+def addRain(imageList, randomSeed=10, mode='noMist'):
     """
     Adds rain effect on glass to the image given as input.
-    
+
     Arguments:
     -----------
         imageList: np.ndarray (numImages, Width, Height, numChannels)
@@ -177,7 +177,7 @@ def addRain(imageList, randomSeed=10, mode='withMist'):
         kernel = np.zeros( (1,2), np.float32)
         kernel[0,0] = -3.0  #Try 2.0
         kernel[0,1] = 3.0   #Try 2.0
-        
+
         #Do the actual kernel operation...
         output = cv2.filter2D(imgIn.astype(np.float32), -1, kernel)
         #Scaling back so that the zero point is at 128 (gray)...
