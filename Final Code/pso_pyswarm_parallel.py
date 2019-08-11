@@ -71,7 +71,7 @@ def makeObservations(imgList, mode='multi', farScale = 0.5, obliquePercentage = 
                     M = cv2.getPerspectiveTransform(src, dst)
                     warped = cv2.warpPerspective(img, M, (imgRows, imgCols))
                     #warped = warped[:, int(XobliquePixels):int(imgRows - XobliquePixels - 1)]
-                    warped = warped[int(oP*YobliquePixels/100):int(imgCols - (oP*YobliquePixels/100) - 1), 
+                    warped = warped[int(oP*YobliquePixels/100):int(imgCols - (oP*YobliquePixels/100) - 1),
                                 int(XobliquePixels):int(imgRows - XobliquePixels - 1)]
                     warped = cv2.resize(warped, (imgRows, imgCols))
                     img1 = cv2.resize(warped, (int(imgRows*fS), int(imgCols*fS)))
@@ -97,7 +97,7 @@ def makeObservations(imgList, mode='multi', farScale = 0.5, obliquePercentage = 
                     # compute the perspective transform matrix and then apply it
                     M = cv2.getPerspectiveTransform(src, dst)
                     warped = cv2.warpPerspective(img, M, (imgRows, imgCols))
-                    warped = warped[int(oP*YobliquePixels/100):int(imgCols - (oP*YobliquePixels/100) - 1), 
+                    warped = warped[int(oP*YobliquePixels/100):int(imgCols - (oP*YobliquePixels/100) - 1),
                                 int(XobliquePixels):int(imgRows - XobliquePixels - 1)]
                     warped = cv2.resize(warped, (imgRows, imgCols))
                     img1 = cv2.resize(warped, (int(imgRows*fS), int(imgCols*fS)))
@@ -141,7 +141,7 @@ def makeObservations(imgList, mode='multi', farScale = 0.5, obliquePercentage = 
             # compute the perspective transform matrix and then apply it
             M = cv2.getPerspectiveTransform(src, dst)
             warped = cv2.warpPerspective(img, M, (imgRows, imgCols))
-            warped = warped[int(obliquePercentage*YobliquePixels/100):int(imgCols - (obliquePercentage*YobliquePixels/100) - 1), 
+            warped = warped[int(obliquePercentage*YobliquePixels/100):int(imgCols - (obliquePercentage*YobliquePixels/100) - 1),
                         int(XobliquePixels):int(imgRows - XobliquePixels - 1)]
             warped = cv2.resize(warped, (imgRows, imgCols))
             img1 = cv2.resize(warped, (int(imgRows*farScale), int(imgCols*farScale)))
@@ -151,11 +151,11 @@ def makeObservations(imgList, mode='multi', farScale = 0.5, obliquePercentage = 
             i+=1
     return newImgList, increaseFactor
 
-def alterImages(imageList, alterFeatures = None):
+def alterImages(imageList, alterFeatures = None, withRain = True):
     """
     Given a feature vector of alterations (as described below), alters a set of
     images accordingly
-    
+
     Arguments:
     -----------
         imageList: np.ndarray (numImages, Width, Height, numChannels)
@@ -166,8 +166,10 @@ def alterImages(imageList, alterFeatures = None):
                 <mudSplat1> : [mudSpaltObject]
                 <mudSplat2> : [mudSpaltObject]
                 <mudSplat3> : [mudSpaltObject]
-                <rain>      : [randomSeed]
+                <rain>      : [randomSeed, rainy]
                 <fog>       : [fogIntensity, randomSeed]
+        withRain: boolean
+            If False, will ignore the rain features
     Returns:
     -----------
         outImgs: np.ndarray (numImages, Width, Height, numChannels)
@@ -188,15 +190,34 @@ def alterImages(imageList, alterFeatures = None):
         fogInten = alterFeatures[5]
         fogSeed  = alterFeatures[6]
 
-        allSplatImg = combineSplats([mudObj1]+[mudObj2]+[mudObj3], W, H).astype('uint8')
-        allSplatImg[:,:,:-1][allSplatImg[:,:,:-1]==0] = 255
-        splatImgs = np.zeros(imageList.shape)
-        for i, image in enumerate(imageList):
-            splatImgs[i, ...] = addMudSplat(image, allSplatImg)
-        if np.ceil(rainExt)>0:
-            outImgs = addRain(addFog(splatImgs, fogInten, int(fogSeed)), int(rainSeed))
+        if mudObj1.scale>0 and mudObj2.scale>0 and mudObj3.scale>0:
+            allSplatImg = combineSplats([mudObj1]+[mudObj2]+[mudObj3], W, H).astype('uint8')
+            allSplatImg[:,:,:-1][allSplatImg[:,:,:-1]==0] = 255
+            splatImgs = np.zeros(imageList.shape)
+            for i, image in enumerate(imageList):
+                splatImgs[i, ...] = addMudSplat(image, allSplatImg)
+        elif mudObj1.scale>0 and mudObj2.scale>0:
+            allSplatImg = combineSplats([mudObj1]+[mudObj2], W, H).astype('uint8')
+            allSplatImg[:,:,:-1][allSplatImg[:,:,:-1]==0] = 255
+            splatImgs = np.zeros(imageList.shape)
+            for i, image in enumerate(imageList):
+                splatImgs[i, ...] = addMudSplat(image, allSplatImg)
+        elif mudObj1.scale>0:
+            allSplatImg = combineSplats([mudObj1], W, H).astype('uint8')
+            allSplatImg[:,:,:-1][allSplatImg[:,:,:-1]==0] = 255
+            splatImgs = np.zeros(imageList.shape)
+            for i, image in enumerate(imageList):
+                splatImgs[i, ...] = addMudSplat(image, allSplatImg)
         else:
+            splatImgs = deepcopy(imageList).astype("float64")
+        if np.ceil(rainExt)>0 and withRain and np.ceil(fogInten)>0:
+            outImgs = addRain(addFog(splatImgs, fogInten, int(fogSeed)), int(rainSeed))
+        elif np.ceil(rainExt)>0 and withRain:
+            outImgs = addRain(splatImgs, int(rainSeed))
+        elif np.ceil(fogInten)>0:
             outImgs = addFog(splatImgs, fogInten, int(fogSeed))
+        else:
+            outImgs = splatImgs
     else:
         outImgs = imageList
     return outImgs
@@ -259,11 +280,14 @@ def predictModel_Nparticles(originalImages, originalClass, targetClass,
         numFinImages = numImgs*len(alterFeatures)
         finImages = np.zeros((numFinImages, W, H, nCh))
         for n, feature in enumerate(alterFeatures):
-            finImages[n*numImgs:(n+1)*numImgs, ...] = alterImages(originalImages, feature)
+            finImages[n*numImgs:(n+1)*numImgs, ...] = alterImages(originalImages, feature, False)
         print("Alteration process is success. Proceeding to making observations.")
         finImages, increaseFactor = makeObservations(finImages)
-        finImages = np.uint8(finImages)
         numImgs = numImgs*increaseFactor
+        for n, feature in enumerate(alterFeatures):
+            if np.ceil(feature[4])>0:
+                finImages[n*numImgs:(n+1)*numImgs, ...] = addRain(finImages[n*numImgs:(n+1)*numImgs, ...].astype("float64"), int(feature[3]))
+        finImages = np.uint8(finImages)
         print("Made observations successfully. Proceeding to model predictions.")
         predOutput = model.predict(finImages)
 
@@ -369,7 +393,7 @@ def _cons_f_ieqcons_wrapper(f_ieqcons, args, kwargs, x):
 def pso(func, lb, ub, ieqcons=[], f_ieqcons=None, args=(), kwargs={},
         swarmsize=100, omega=0.5, phip=0.5, phig=0.5, maxiter=100,
         minstep=1e-8, minfunc=1e-8, debug=False, processes=1,
-        particle_output=False):
+        particle_output=False, abs_min=None):
     """
     Perform a particle swarm optimization (PSO)
 
@@ -424,6 +448,9 @@ def pso(func, lb, ub, ieqcons=[], f_ieqcons=None, args=(), kwargs={},
     particle_output : boolean
         Whether to include the best per-particle position and the objective
         values at those.
+    abs_min : int
+        If 'abs_min' is given, iterations will terminate if the value of PSO
+        objective function falls below or equal to this number
 
     Returns
     =======
@@ -485,10 +512,11 @@ def pso(func, lb, ub, ieqcons=[], f_ieqcons=None, args=(), kwargs={},
 
     # Initialize the particle's position
     x = lb + x*(ub - lb)
-    x[-1,:] = [25, 50, 40, 220, 55, 20, 30, 150, 60, 40, 20, 90, 0, 0, 0, 0]
-    x[:,2] = 40
-    x[:,6] = 30
-    x[:,10]= 20
+    #x[-1,:] = [25, 50, 40, 220, 55, 20, 30, 150, 60, 40, 20, 90, 0, 0, 0, 0]
+    x[:,2] = ub[2]
+    x[:,6] = ub[6]
+    x[:,10]= ub[10]
+    x[-1,14]= ub[14]
 
     # Calculate objective and constraints for each particle
     if processes > 1:
@@ -538,7 +566,7 @@ def pso(func, lb, ub, ieqcons=[], f_ieqcons=None, args=(), kwargs={},
 
         # Update the particles velocities
         v = omega*v + phip*rp*(p - x) + phig*rg*(g - x)
-        
+
         # Update the particles' positions
         x = x + v
 
@@ -546,7 +574,7 @@ def pso(func, lb, ub, ieqcons=[], f_ieqcons=None, args=(), kwargs={},
         maskl = x < lb
         masku = x > ub
         x = x*(~np.logical_or(maskl, masku)) + lb*maskl + ub*masku
-        
+
         # Update objectives and constraints
         if processes > 1:
             fx = np.array(mp_pool.map(obj, x))
@@ -563,7 +591,7 @@ def pso(func, lb, ub, ieqcons=[], f_ieqcons=None, args=(), kwargs={},
                 fogFeatures     = [X[14], int(X[15])]
                 allFeatures.append([mudSplatObject1] + [mudSplatObject2] + [mudSplatObject3] + rainFeatures + fogFeatures)
             fx = predictModel_Nparticles(imgData, oriClass, tarClass, model, allFeatures)[0]
-            
+
             for i in range(S):
                 #fx[i] = obj(x[i, :])
                 fs[i] = is_feasible(x[i, :])
@@ -587,20 +615,29 @@ def pso(func, lb, ub, ieqcons=[], f_ieqcons=None, args=(), kwargs={},
                 print('Stopping search: Swarm best objective change less than {:}'\
                     .format(minfunc))
                 if particle_output:
-                    return p_min, fp[i_min], p, fp
+                    return p_min, fp[i_min], fg_history, p, fp
                 else:
-                    return p_min, fp[i_min]
+                    return p_min, fp[i_min], fg_history
             elif stepsize <= minstep:
                 print('Stopping search: Swarm best position change less than {:}'\
                     .format(minstep))
                 if particle_output:
-                    return p_min, fp[i_min], p, fp
+                    return p_min, fp[i_min], fg_history, p, fp
                 else:
-                    return p_min, fp[i_min]
+                    return p_min, fp[i_min], fg_history
             else:
                 g = p_min.copy()
                 fg = fp[i_min]
 
+        if fg<=abs_min:
+            print('Stopping search: Swarm best position change less than or equal to given absolute minima{:}'\
+                .format(abs_min))
+            if debug:
+                print('Best after iteration {:}: {:} {:}'.format(it, g, fg))
+            if particle_output:
+                return g, fg, fg_history, p, fp
+            else:
+                return g, fg, fg_history
         if debug:
             print('Best after iteration {:}: {:} {:}'.format(it, g, fg))
         fg_history.append(fg)
