@@ -162,30 +162,30 @@ def addRain(imageList, randomSeed=10, mode='noMist'):
     H = imageList.shape[2]
     nCh = imageList.shape[3]
     rainImgs = np.zeros((numImgs,W,H,nCh))
+    perlin = generatePerlin(W, H, randomSeed)
+    #cv2.imwrite('perlinRain.png', perlin)
+    perlin_thr = cv2.threshold(perlin,127,255,cv2.THRESH_BINARY_INV)[1]
+    alpha = perlin_thr==255
+    alpha = 255*alpha.astype(int)
+    perlin_thr = cv2.merge((perlin_thr.astype(int), perlin_thr.astype(int), perlin_thr.astype(int), alpha))
+    rainDrops = cv2.GaussianBlur(scaleTo8Bit(perlin_thr), (3,3), 0)
+    imgIn = rainDrops[:,:,:-1].astype(np.float32)
+    #Create the  filter
+    kernel = np.zeros( (1,2), np.float32)
+    kernel[0,0] = -3.0  #Try 2.0
+    kernel[0,1] = 3.0   #Try 2.0
+
+    #Do the actual kernel operation...
+    output = cv2.filter2D(imgIn.astype(np.float32), -1, kernel)
+    #Scaling back so that the zero point is at 128 (gray)...
+    output8bit = scaleTo8Bit(output)
+    output8bit = cv2.GaussianBlur(output8bit, (3,3), 0)
+    alpha[alpha==255]=100
+    alpha_s = alpha/255
+    alpha_l = 1.0 - alpha_s
     for j,image in enumerate(imageList):
         if (mode=='withMist'):
             image[:,:,:3] = cv2.GaussianBlur(image[:,:,:3], (5,5), 5)
-        perlin = generatePerlin(W, H, randomSeed)
-        #cv2.imwrite('perlinRain.png', perlin)
-        perlin_thr = cv2.threshold(perlin,127,255,cv2.THRESH_BINARY_INV)[1]
-        alpha = perlin_thr==255
-        alpha = 255*alpha.astype(int)
-        perlin_thr = cv2.merge((perlin_thr.astype(int), perlin_thr.astype(int), perlin_thr.astype(int), alpha))
-        rainDrops = cv2.GaussianBlur(scaleTo8Bit(perlin_thr), (3,3), 0)
-        imgIn = rainDrops[:,:,:-1].astype(np.float32)
-        #Create the  filter
-        kernel = np.zeros( (1,2), np.float32)
-        kernel[0,0] = -3.0  #Try 2.0
-        kernel[0,1] = 3.0   #Try 2.0
-
-        #Do the actual kernel operation...
-        output = cv2.filter2D(imgIn.astype(np.float32), -1, kernel)
-        #Scaling back so that the zero point is at 128 (gray)...
-        output8bit = scaleTo8Bit(output)
-        output8bit = cv2.GaussianBlur(output8bit, (3,3), 0)
-        alpha[alpha==255]=100
-        alpha_s = alpha/255
-        alpha_l = 1.0 - alpha_s
         for i in range(nCh):
             if(i<3):
                 rainImgs[j,:,:,i] = np.add(np.multiply(image[:,:,i], alpha_l), np.multiply(output8bit[:,:,i], alpha_s))

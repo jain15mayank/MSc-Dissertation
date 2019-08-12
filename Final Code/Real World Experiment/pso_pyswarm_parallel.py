@@ -283,6 +283,7 @@ def predictModel_Nparticles(originalImages, originalClass, targetClass,
             finImages[n*numImgs:(n+1)*numImgs, ...] = alterImages(originalImages, feature, False)
         print("Alteration process is success. Proceeding to making observations.")
         finImages, increaseFactor = makeObservations(finImages)
+        print("Made observations. Adding rain.")
         numImgs = numImgs*increaseFactor
         for n, feature in enumerate(alterFeatures):
             if np.ceil(feature[4])>0:
