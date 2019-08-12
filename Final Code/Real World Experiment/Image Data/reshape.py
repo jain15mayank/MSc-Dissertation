@@ -1,9 +1,7 @@
 import cv2
 import os
-from math import floor
 
 outputDir = 'Reshaped Signs'
-#maxPad = 10
 finRes = 100
 dirCounter = dict()
 

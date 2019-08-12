@@ -17,7 +17,7 @@ from keras.initializers import glorot_uniform
 
 # load model
 with CustomObjectScope({'GlorotUniform': glorot_uniform()}):
-  model = load_model('../Models/VGG16 - Data Random - LR 1e-7/model.h5')
+  model = load_model('../../Models/VGG16 - Data Random - LR 1e-7/model.h5')
 
 # summarize model.
 model.summary()
