@@ -31,7 +31,7 @@ def hist_match(source, template):
     source = source.ravel()
     template = template.ravel()
     
-    source[source==255] = 127
+    #source[source==255] = np.average(source[source != 255])
     # get the set of unique pixel values and their corresponding indices and
     # counts
     s_values, bin_idx, s_counts = np.unique(source, return_inverse=True,
@@ -102,6 +102,10 @@ def addMudSplat(originalImage, mudSplatRef, SplatOffsetX = 0,
     # channel in HSV format
     alpha_newSplat = newSplat[:,:,3]
     testSplat = copy.deepcopy(newSplat[:,:,:3])
+    #print(np.average(testSplat[:,:,0][alpha_newSplat!=0].ravel()))
+    #for ch in range(3):
+    #    testSplat[:,:,ch][alpha_newSplat==0] = np.average(testSplat[:,:,ch][alpha_newSplat!=0].ravel())
+    #print(np.average(testSplat[:,:,0][alpha_newSplat!=0].ravel()))
     testSplat = cv2.cvtColor(testSplat, cv2.COLOR_BGR2HSV)
     img2 = copy.deepcopy(originalImage)
     tempSplat = cv2.cvtColor(newSplat[:,:,:3], cv2.COLOR_BGR2HSV)
@@ -162,6 +166,86 @@ class mudSplat:
         self.scale   = scale
         self.rotate  = rotate
 
+def addMultiSplats(originalImage, mudSplatObjects):
+    """
+    Adds all mudSplatObjects onto originalImage
+
+    Arguments:
+    -----------
+        originalImage: np.ndarray
+            Image on which mud-splat is required to be added
+        mudSplatObjects: list
+            List of mud splat objects to be combined
+
+    Returns:
+    -----------
+        muddyImage: np.ndarray
+            The transformed output image with all mud-splats on it
+    """
+    imgW = originalImage.shape[0]
+    imgH = originalImage.shape[1]
+    xOffset = []
+    yOffset = []
+    finalSplats = []
+    for splatObj in mudSplatObjects:
+        mudSplatRef = cv2.imread(splatObj.imgPath, cv2.IMREAD_UNCHANGED)
+        mudSplatRef[:,:,3][np.sum(mudSplatRef[:,:,:3], axis=2)>600] = 0
+        for ch in range(3):
+            mudSplatRef[:,:,ch][mudSplatRef[:,:,3]==0] = np.average(mudSplatRef[:,:,ch][mudSplatRef[:,:,3]!=0].ravel())
+        xOffset.append(splatObj.xOffset)
+        yOffset.append(splatObj.yOffset)
+        scaleParam = splatObj.scale
+        rotateParam = splatObj.rotate
+        # Clip scaleParam value between 0 & 100
+        if scaleParam<0:
+            scaleParam = 0
+        elif scaleParam>100:
+            scaleParam = 100
+        # Scale the mud splat image - store in the variable newSplat
+        sizeSplat = int(scaleParam*min([imgW, imgH])/100)
+        if mudSplatRef.shape[0]<mudSplatRef.shape[1]:
+            newSplat = cv2.resize(mudSplatRef,
+                       (int(mudSplatRef.shape[0]*sizeSplat/mudSplatRef.shape[1]), sizeSplat))
+        else:
+            newSplat = cv2.resize(mudSplatRef,
+                       (sizeSplat, int(mudSplatRef.shape[1]*sizeSplat/mudSplatRef.shape[0])))
+        if rotateParam is not None:
+            rows,cols,nChannels = newSplat.shape
+            M = cv2.getRotationMatrix2D((cols/2,rows/2), rotateParam, 1)
+            newSplat = cv2.warpAffine(newSplat, M, (cols,rows))
+        # Perform histogram matching of newSplat w.r.t. originalImage - only on V
+        # channel in HSV format
+        alpha_newSplat = newSplat[:,:,3]
+        testSplat = copy.deepcopy(newSplat[:,:,:3])
+        testSplat = cv2.cvtColor(testSplat, cv2.COLOR_BGR2HSV)
+        img2 = copy.deepcopy(originalImage)
+        tempSplat = cv2.cvtColor(newSplat[:,:,:3], cv2.COLOR_BGR2HSV)
+        img2 = cv2.cvtColor(img2, cv2.COLOR_BGR2HSV)
+        testSplat[:,:,2] = np.uint8(hist_match(tempSplat[:,:,2], originalImage[:,:,2]))
+        testSplat = cv2.cvtColor(testSplat, cv2.COLOR_HSV2BGR)
+        finSplat = np.dstack((testSplat, alpha_newSplat))
+        testSplat = copy.deepcopy(finSplat)
+        # Calculate standard deviation for Gaussian Blur using Original Image - to
+        # be applied to the mud-splat for overlaying
+        ret = cv2.threshold(np.uint8(originalImage[25:75,25:75,1]),0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)[0]
+        temp_wh_half = originalImage[25:75,25:75,1][originalImage[25:75,25:75,1]>=ret]
+        sigma = np.std(temp_wh_half)
+        # Apply Gaussian Blur to Mud Splat
+        testSplat = cv2.GaussianBlur(testSplat, (5, 5), sigma)
+        finalSplats.append(testSplat.astype("uint8"))
+    allMudSplats = np.zeros((imgW, imgH, 4))
+    for i, splat in enumerate(finalSplats):
+        allMudSplats[yOffset[i]:yOffset[i]+splat.shape[0],
+                    xOffset[i]:xOffset[i]+splat.shape[1], :] = np.maximum(splat,
+                        allMudSplats[yOffset[i]:yOffset[i]+splat.shape[0],
+                                    xOffset[i]:xOffset[i]+splat.shape[1], :])
+    alpha_s = allMudSplats[:, :, 3]/255
+    alpha_l = 1.0 - alpha_s
+    muddyImage = copy.deepcopy(originalImage)
+    muddyImage[:, :, :3] = np.moveaxis(np.add(np.multiply(alpha_s, np.moveaxis(allMudSplats[:,:,:3],-1,0)),
+            np.multiply(alpha_l, np.moveaxis(originalImage[:, :, :3],-1,0))).astype(int),0,-1)
+    return muddyImage.astype("uint8")
+
 def combineSplats(mudSplatObjects, finW, finH):
     """
     Combines the given mudSplatObjects into 1 image of dimensions 'finW X finH':
@@ -185,7 +269,7 @@ def combineSplats(mudSplatObjects, finW, finH):
     allMudSplats = np.zeros((finW, finH, 4))
     for splatObj in mudSplatObjects:
         mudSplatRef = cv2.imread(splatObj.imgPath, cv2.IMREAD_UNCHANGED)
-        mudSplatRef[:,:,:-1][mudSplatRef[:,:,:-1]==255] = 0
+        #mudSplatRef[:,:,:-1][mudSplatRef[:,:,:-1]==255] = 0
         xOffset = splatObj.xOffset
         yOffset = splatObj.yOffset
         scaleParam = splatObj.scale
