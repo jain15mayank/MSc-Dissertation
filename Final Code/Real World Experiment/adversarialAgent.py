@@ -436,8 +436,8 @@ for mudId, mudImgPath in enumerate(['../AdversaryImages/mudSplat2.png', '../Adve
     else:
         rain_ub = [0, 0, 0]
     
-    lb = ms1_lb + ms2_lb + ms3_lb + rain_lb + fog_lb
-    ub = ms1_ub + ms2_ub + ms3_ub + rain_ub + fog_ub
+    lb = ms1_lb + ms2_lb + ms3_lb + fog_lb + rain_lb
+    ub = ms1_ub + ms2_ub + ms3_ub + fog_ub + rain_ub
     
     q_opt, f_opt, f_hist = pso(pso_objective, lb, ub, args=args,
                                     swarmsize=100, omega=0.8, phip=2.0, phig=2.0,
