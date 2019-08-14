@@ -246,9 +246,10 @@ def predictModel_Nparticles(originalImages, originalClass, targetClass,
     else:
         numFinImages = numImgs*len(alterFeatures)
         finImages = np.zeros((numFinImages, W, H, nCh))
-        finImages = np.array(Parallel(n_jobs=40)(delayed(alterImages)(originalImages, feature) for n,feature in enumerate(alterFeatures)))
-        finImages = np.reshape(finImages, (finImages.shape[0]*finImages.shape[1], finImages.shape[2], finImages.shape[3]))
-        print(finImages.shape)
+        finImages = np.concatenate((Parallel(n_jobs=40)(delayed(alterImages)(originalImages, feature) for n,feature in enumerate(alterFeatures))), axis=0)
+        print(finImages.shape) 
+        #finImages = np.reshape(finImages, (finImages.shape[0]*finImages.shape[1], finImages.shape[2], finImages.shape[3], finImages.shape[4]))
+        #print(finImages.shape)
         '''
         for n, feature in enumerate(alterFeatures):
             print("Adding Mud-Splats")
