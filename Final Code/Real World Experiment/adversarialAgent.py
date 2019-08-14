@@ -453,7 +453,7 @@ for mudId, mudImgPath in enumerate(['../AdversaryImages/mudSplat2.png', '../Adve
     plt.title('Model accuracy')
     plt.ylabel('Global Minima')
     plt.xlabel('Iteration')
-    plt.ylim(0, 25)
+    plt.ylim(0, 36)
     plt.legend(['Convergence Characteristics'], loc='upper right')
     fig.savefig(folder + '/Mud' + str(mudId) + '/pso_convergence.png')
     
