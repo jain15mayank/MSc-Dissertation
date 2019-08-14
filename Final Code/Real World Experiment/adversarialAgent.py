@@ -335,21 +335,17 @@ def predictModel(originalImages, originalClass, targetClass,
         # Predict on originalImages directly
         finImages = originalImages
         predOutput = model.predict(finImages)
-    elif len(alterFeatures) == 1:
+    else:
         # Apply same modifications to all originalImages
         finImages = np.zeros(originalImages.shape).astype("uint8")
         for i, image in enumerate(originalImages):
-            print(type(alterFeatures[0]))
-            print(len(alterFeatures[0]))
-            listSplats = [alterFeatures[0][0], alterFeatures[1][0], alterFeatures[2][0]]
+            listSplats = [alterFeatures[0], alterFeatures[1], alterFeatures[2]]
             finImages[i, ...] = addMultiSplats(image, listSplats)
         if alterFeatures[3]>0:
             finImages = addFog(finImages, alterFeatures[3], int(alterFeatures[4]))
         if alterFeatures[7]>0:
             finImages = addRain(finImages, int(alterFeatures[5]), int(alterFeatures[6]))
         predOutput = model.predict(finImages)
-    else:
-        raise Exception('More than 1 alterFeatures provided.')
 
     predScore = 0
     accuracy = 0
@@ -473,7 +469,7 @@ for mudId, mudImgPath in enumerate(['../AdversaryImages/mudSplat2.png', '../Adve
     mudSplatObject3 = mudSplat(mudImgPath, int(q_opt[8]), int(q_opt[9]), q_opt[10], q_opt[11])
     fogFeatures     = [q_opt[12], int(q_opt[13])]
     rainFeatures    = [int(q_opt[14]), int(q_opt[15]), np.ceil(q_opt[16])]
-    allFeatures     = [[mudSplatObject1] + [mudSplatObject2] + [mudSplatObject3] + fogFeatures + rainFeatures]
+    allFeatures     = [mudSplatObject1 + mudSplatObject2 + mudSplatObject3 + fogFeatures + rainFeatures]
     
     predAccuracy = predictModel(x_realExp, oriClass, tarClass, model, allFeatures, folder+'/Mud'+str(mudId)+'/')[2]
     f.write("New Accuracy: " + str(predAccuracy) + "\n\n")
