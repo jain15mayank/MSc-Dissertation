@@ -135,7 +135,7 @@ def addFog(imageList, fogIntensity=0.8, randomSeed=10):
         fogImgs[:,:,:,n] = np.add((fogIntensity*perlin), np.multiply(1-(fogIntensity*perlin/255), imageList[:,:,:,n]))
     return fogImgs.astype('uint8')
 
-def addRain(imageList, randomSeed=10, mode='noMist'):
+def addRain(imageList, randomSeed=10, angle=0, mode='noMist'):
     """
     Adds rain effect on glass to the image given as input.
 
@@ -147,6 +147,11 @@ def addRain(imageList, randomSeed=10, mode='noMist'):
             Specifies the randomSeed for generating Perlin's Noise which will
             be used to add rain drops later. In other words, it alters the
             location of rain drops.
+        angle: int {0,1,2}
+            Specifies the angle at which falling rain is to be simulated
+            0 => 45 degree
+            1 => 90 degree
+            2 => 135 degree
         mode: string ('withMist' or 'noMist')
             If 'withMist': adds a gaussian blur to original image before adding rain drops
             If 'noMist':   no effect of blur/mist on original image
@@ -171,9 +176,12 @@ def addRain(imageList, randomSeed=10, mode='noMist'):
     rainDrops = cv2.GaussianBlur(scaleTo8Bit(perlin_thr), (3,3), 0)
     imgIn = rainDrops[:,:,:-1].astype(np.float32)
     #Create the  filter
-    kernel = np.zeros( (1,2), np.float32)
-    kernel[0,0] = -3.0  #Try 2.0
-    kernel[0,1] = 3.0   #Try 2.0
+    if angle<1:
+        kernel = 2*np.array([[-1,-1,0],[-1,0,1],[0,1,1]])
+    elif angle<2:
+        kernel = 2*np.array([[-1,-1,-1],[0,0,0],[1,1,1]])
+    else:
+        kernel = 2*np.array([[0,-1,-1],[1,0,-1],[1,1,0]])
 
     #Do the actual kernel operation...
     output = cv2.filter2D(imgIn.astype(np.float32), -1, kernel)
@@ -185,6 +193,7 @@ def addRain(imageList, randomSeed=10, mode='noMist'):
     alpha_l = 1.0 - alpha_s
     for j,image in enumerate(imageList):
         if (mode=='withMist'):
+            image[:,:,:3] = addFog(image[:,:,:3], 0.4, randomSeed)
             image[:,:,:3] = cv2.GaussianBlur(image[:,:,:3], (5,5), 5)
         for i in range(nCh):
             if(i<3):
