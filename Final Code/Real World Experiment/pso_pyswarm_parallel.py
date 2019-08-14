@@ -515,7 +515,7 @@ def pso(func, lb, ub, ieqcons=[], f_ieqcons=None, args=(), kwargs={},
             mudSplatObject3 = mudSplat(mudImgPath, int(x[i,8]), int(x[i,9]), x[i,10], x[i,11])
             fogFeatures     = [x[i,12], int(x[i,13])]
             rainFeatures    = [int(x[i,14]), int(x[i,15]), np.ceil(x[i,16])]
-            allFeatures.append([mudSplatObject1] + [mudSplatObject2] + [mudSplatObject3] + rainFeatures + fogFeatures)
+            allFeatures.append([mudSplatObject1] + [mudSplatObject2] + [mudSplatObject3] + fogFeatures + rainFeatures)
         fx = predictModel_Nparticles(imgData, oriClass, tarClass, model, allFeatures)[0]
 
         for i in range(S):
@@ -573,7 +573,7 @@ def pso(func, lb, ub, ieqcons=[], f_ieqcons=None, args=(), kwargs={},
                 mudSplatObject3 = mudSplat(mudImgPath, int(X[8]), int(X[9]), X[10], X[11])
                 fogFeatures     = [x[i,12], int(x[i,13])]
                 rainFeatures    = [int(x[i,14]), int(x[i,15]), np.ceil(x[i,16])]
-                allFeatures.append([mudSplatObject1] + [mudSplatObject2] + [mudSplatObject3] + rainFeatures + fogFeatures)
+                allFeatures.append([mudSplatObject1] + [mudSplatObject2] + [mudSplatObject3] + fogFeatures + rainFeatures)
             fx = predictModel_Nparticles(imgData, oriClass, tarClass, model, allFeatures)[0]
 
             for i in range(S):
