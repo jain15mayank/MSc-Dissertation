@@ -339,6 +339,8 @@ def predictModel(originalImages, originalClass, targetClass,
         # Apply same modifications to all originalImages
         finImages = np.zeros(originalImages.shape).astype("uint8")
         for i, image in enumerate(originalImages):
+            print(type(alterFeatures[0]))
+            print(len(alterFeatures[0]))
             listSplats = [alterFeatures[0][0], alterFeatures[1][0], alterFeatures[2][0]]
             finImages[i, ...] = addMultiSplats(image, listSplats)
         if alterFeatures[3]>0:
@@ -443,7 +445,7 @@ for mudId, mudImgPath in enumerate(['../AdversaryImages/mudSplat2.png', '../Adve
     
     q_opt, f_opt, f_hist = pso(pso_objective, lb, ub, args=args,
                                     swarmsize=100, omega=0.8, phip=2.0, phig=2.0,
-                                    maxiter=2, minstep=1e-8, debug=True, abs_min=0)
+                                    maxiter=1, minstep=1e-8, debug=True, abs_min=0)
     
     print(q_opt)
     print(f_opt)
