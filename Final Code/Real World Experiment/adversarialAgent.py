@@ -441,7 +441,7 @@ for mudId, mudImgPath in enumerate(['../AdversaryImages/mudSplat1.png', '../Adve
     
     q_opt, f_opt, f_hist = pso(pso_objective, lb, ub, args=args,
                                     swarmsize=100, omega=0.8, phip=2.0, phig=2.0,
-                                    maxiter=1, minstep=1e-8, debug=True, abs_min=0)
+                                    maxiter=300, minstep=1e-8, debug=True, abs_min=0)
     
     print(q_opt)
     print(f_opt)
