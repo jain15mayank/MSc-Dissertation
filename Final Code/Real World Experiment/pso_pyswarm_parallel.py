@@ -4,6 +4,7 @@ from copy import deepcopy
 import cv2
 from utils_mudSlap import *
 from utils_naturalPerturbations import addFog, addRain
+from joblib import Parallel, delayed
 
 '''
 HELPER Functions
@@ -280,10 +281,16 @@ def predictModel_Nparticles(originalImages, originalClass, targetClass,
         numFinImages = numImgs*len(alterFeatures)
         finImages = np.zeros((numFinImages, W, H, nCh))
         for n, feature in enumerate(alterFeatures):
+            '''
             for i, image in enumerate(originalImages):
                 finImages[(n*numImgs)+i, ...] = addMultiSplats(image, feature[:3])
+            '''
+            print("Adding Mud-Splats")
+            finImages = Parallel(n_jobs=numImgs)(delayed(addMultiSplats)(image, feature[:3]) for i,image in enumerate(originalImages))
+            print("Adding Fog")
             if feature[3]>0:
                 finImages[n*numImgs:(n+1)*numImgs, ...] = addFog(finImages[n*numImgs:(n+1)*numImgs, ...], feature[3], int(feature[4]))
+            print("Adding Rain")
             if feature[7]>0:
                 finImages[n*numImgs:(n+1)*numImgs, ...] = addRain(finImages[n*numImgs:(n+1)*numImgs, ...], int(feature[5]), int(feature[6]))
         print("Alteration process successfull. Proceeding to model predictions.")
