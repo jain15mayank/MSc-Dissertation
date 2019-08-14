@@ -234,6 +234,7 @@ def predictModel_Nparticles(originalImages, originalClass, targetClass,
             The transformed output image with mud-splat on it
     """
     print("Starting to alter images...")
+    t0 = time.time()
     if len(originalImages.shape)==3:
         originalImages = np.expand_dims(originalImages, axis=0)
     numImgs = originalImages.shape[0]
@@ -267,8 +268,12 @@ def predictModel_Nparticles(originalImages, originalClass, targetClass,
             if feature[7]>0:
                 finImages[n*numImgs:(n+1)*numImgs, ...] = addRain(finImages[n*numImgs:(n+1)*numImgs, ...], int(feature[5]), int(feature[6]))
         '''
+        t1 = time.time()
+        print("Time taken for alterations = ", t1-t0)
         print("Alteration process successfull. Proceeding to model predictions.")
         predOutput = model.predict(finImages)
+        t2 = time.time()
+        print("Time taken for predictions = ", t2-t1)
 
     predScore = np.zeros(len(alterFeatures))
     for n in range(len(alterFeatures)):
