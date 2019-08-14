@@ -339,7 +339,8 @@ def predictModel(originalImages, originalClass, targetClass,
         # Apply same modifications to all originalImages
         finImages = np.zeros(originalImages.shape).astype("uint8")
         for i, image in enumerate(originalImages):
-            finImages[i, ...] = addMultiSplats(image, alterFeatures[:3])
+            listSplats = [alterFeatures[0][0], alterFeatures[1][0], alterFeatures[2][0]]
+            finImages[i, ...] = addMultiSplats(image, listSplats)
         if alterFeatures[3]>0:
             finImages = addFog(finImages, alterFeatures[3], int(alterFeatures[4]))
         if alterFeatures[7]>0:
