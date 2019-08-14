@@ -188,6 +188,8 @@ def addMultiSplats(originalImage, mudSplatObjects):
     yOffset = []
     finalSplats = []
     for splatObj in mudSplatObjects:
+        if splatObj.scale<=0:
+            continue
         mudSplatRef = cv2.imread(splatObj.imgPath, cv2.IMREAD_UNCHANGED)
         mudSplatRef[:,:,3][np.sum(mudSplatRef[:,:,:3], axis=2)>600] = 0
         for ch in range(3):
@@ -233,6 +235,8 @@ def addMultiSplats(originalImage, mudSplatObjects):
         # Apply Gaussian Blur to Mud Splat
         testSplat = cv2.GaussianBlur(testSplat, (5, 5), sigma)
         finalSplats.append(testSplat.astype("uint8"))
+    if len(finalSplats)==0:
+        return originalImage.astype("uint8")
     allMudSplats = np.zeros((imgW, imgH, 4))
     for i, splat in enumerate(finalSplats):
         allMudSplats[yOffset[i]:yOffset[i]+splat.shape[0],

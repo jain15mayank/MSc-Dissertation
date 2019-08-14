@@ -200,7 +200,7 @@ def addRain(imageList, randomSeed=10, angle=0, mode='noMist'):
                 rainImgs[j,:,:,i] = np.add(np.multiply(image[:,:,i], alpha_l), np.multiply(output8bit[:,:,i], alpha_s))
             else:
                 rainImgs[j,:,:,i] = image[:,:,i]
-    return rainImgs
+    return rainImgs.astype("uint8")
 
 def addAlpha(imageList):
     newImageList = np.zeros((len(imageList), imageList[0].shape[0], imageList[0].shape[1], 4))

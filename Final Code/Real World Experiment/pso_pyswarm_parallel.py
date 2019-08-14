@@ -280,16 +280,13 @@ def predictModel_Nparticles(originalImages, originalClass, targetClass,
         numFinImages = numImgs*len(alterFeatures)
         finImages = np.zeros((numFinImages, W, H, nCh))
         for n, feature in enumerate(alterFeatures):
-            finImages[n*numImgs:(n+1)*numImgs, ...] = alterImages(originalImages, feature, False)
-        print("Alteration process is success. Proceeding to making observations.")
-        finImages, increaseFactor = makeObservations(finImages)
-        print("Made observations. Adding rain.")
-        numImgs = numImgs*increaseFactor
-        for n, feature in enumerate(alterFeatures):
-            if np.ceil(feature[4])>0:
-                finImages[n*numImgs:(n+1)*numImgs, ...] = addRain(finImages[n*numImgs:(n+1)*numImgs, ...].astype("float64"), int(feature[3]))
-        finImages = np.uint8(finImages)
-        print("Made observations successfully. Proceeding to model predictions.")
+            for i, image in enumerate(originalImages):
+                finImages[(n*numImgs)+i, ...] = addMultiSplats(image, feature[:3])
+            if feature[3]>0:
+                finImages[n*numImgs:(n+1)*numImgs, ...] = addFog(finImages, feature[3], feature[4])
+            if feature[7]>0:
+                finImages[n*numImgs:(n+1)*numImgs, ...] = addRain(finImages, feature[5], feature[6])
+        print("Alteration process successfull. Proceeding to model predictions.")
         predOutput = model.predict(finImages)
 
     predScore = np.zeros(len(alterFeatures))
@@ -514,10 +511,10 @@ def pso(func, lb, ub, ieqcons=[], f_ieqcons=None, args=(), kwargs={},
     # Initialize the particle's position
     x = lb + x*(ub - lb)
     #x[-1,:] = [25, 50, 40, 220, 55, 20, 30, 150, 60, 40, 20, 90, 0, 0, 0, 0]
-    x[:,2] = ub[2]
-    x[:,6] = ub[6]
-    x[:,10]= ub[10]
-    x[-1,14]= ub[14]
+    x[int(S/2):,2] = ub[2]
+    x[int(S/2):,6] = ub[6]
+    x[int(S/2):,10]= ub[10]
+    x[int(S/2):,12]= ub[12]
 
     # Calculate objective and constraints for each particle
     if processes > 1:
@@ -530,8 +527,8 @@ def pso(func, lb, ub, ieqcons=[], f_ieqcons=None, args=(), kwargs={},
             mudSplatObject1 = mudSplat(mudImgPath, int(x[i,0]), int(x[i,1]), x[i,2], x[i,3])
             mudSplatObject2 = mudSplat(mudImgPath, int(x[i,4]), int(x[i,5]), x[i,6], x[i,7])
             mudSplatObject3 = mudSplat(mudImgPath, int(x[i,8]), int(x[i,9]), x[i,10], x[i,11])
-            rainFeatures    = [int(x[i,12]), np.ceil(x[i,13])]
-            fogFeatures     = [x[i,14], int(x[i,15])]
+            fogFeatures     = [x[i,12], int(x[i,13])]
+            rainFeatures    = [int(x[i,14]), int(x[i,15]), np.ceil(x[i,16])]
             allFeatures.append([mudSplatObject1] + [mudSplatObject2] + [mudSplatObject3] + rainFeatures + fogFeatures)
         fx = predictModel_Nparticles(imgData, oriClass, tarClass, model, allFeatures)[0]
 
@@ -588,8 +585,8 @@ def pso(func, lb, ub, ieqcons=[], f_ieqcons=None, args=(), kwargs={},
                 mudSplatObject1 = mudSplat(mudImgPath, int(X[0]), int(X[1]), X[2], X[3])
                 mudSplatObject2 = mudSplat(mudImgPath, int(X[4]), int(X[5]), X[6], X[7])
                 mudSplatObject3 = mudSplat(mudImgPath, int(X[8]), int(X[9]), X[10], X[11])
-                rainFeatures    = [int(X[12]), np.ceil(X[13])]
-                fogFeatures     = [X[14], int(X[15])]
+                fogFeatures     = [x[i,12], int(x[i,13])]
+                rainFeatures    = [int(x[i,14]), int(x[i,15]), np.ceil(x[i,16])]
                 allFeatures.append([mudSplatObject1] + [mudSplatObject2] + [mudSplatObject3] + rainFeatures + fogFeatures)
             fx = predictModel_Nparticles(imgData, oriClass, tarClass, model, allFeatures)[0]
 

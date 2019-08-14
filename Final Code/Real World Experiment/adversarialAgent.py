@@ -337,25 +337,16 @@ def predictModel(originalImages, originalClass, targetClass,
         predOutput = model.predict(finImages)
     elif len(alterFeatures) == 1:
         # Apply same modifications to all originalImages
-        finImages = alterImages(originalImages, alterFeatures[0], False)
-        finImages, increaseFactor = makeObservations(finImages)
-        if np.ceil(alterFeatures[0][4])>0:
-            finImages = addRain(finImages.astype("float64"), int(alterFeatures[0][3]))
-        finImages = np.uint8(finImages)
-        predOutput = model.predict(finImages)
-    elif len(alterFeatures) == len(originalImages):
-        # Apply different modification to each image in originalImages
-        finImages = np.zeros(originalImages.shape)
+        finImages = np.zeros(originalImages.shape).astype("uint8")
         for i, image in enumerate(originalImages):
-            finImages[i, ...] = alterImages(image, alterFeatures[i], False)[0]
-        finImages, increaseFactor = makeObservations(finImages)
-        for i, image in enumerate(originalImages):
-            if np.ceil(alterFeatures[i][4])>0:
-                finImages[i*increaseFactor:(i+1)*increaseFactor, ...] = addRain(finImages[i*increaseFactor:(i+1)*increaseFactor, ...].astype("float64"), int(alterFeatures[i][3]))
-        finImages = np.uint8(finImages)
+            finImages[i, ...] = addMultiSplats(image, alterFeatures[:3])
+        if alterFeatures[3]>0:
+            finImages = addFog(finImages, alterFeatures[3], alterFeatures[4])
+        if alterFeatures[7]>0:
+            finImages = addRain(finImages, alterFeatures[5], alterFeatures[6])
         predOutput = model.predict(finImages)
     else:
-        raise Exception('Number of alterFeatures does not match number of images.')
+        raise Exception('More than 1 alterFeatures provided.')
 
     predScore = 0
     accuracy = 0
@@ -385,9 +376,9 @@ def predictModel(originalImages, originalClass, targetClass,
 CREATE Dataset
 '''
 folder = 'Image Data/Reshaped Signs/'
-x_turnLeft = load_images_from_folder(folder).astype("uint8")
-y_turnLeft = np.zeros((x_turnLeft.shape[0], 3))
-y_turnLeft[:,0] = 1
+x_realExp = load_images_from_folder(folder).astype("uint8")
+y_realExp = np.zeros((x_realExp.shape[0], 3))
+y_realExp[:,0] = 1
 
 #modelPath = '../../Models/ResNet20 Batch Max - Data Random - LR 1e-6/model.h5'
 modelPath = '../../Models/VGG16 - Data Random - LR 1e-7/model.h5'
@@ -399,75 +390,88 @@ def pso_objective(features, *args):
     xOffset, yOffset, scale, rotate = features
     imgData, oriClass, tarClass, mudImgPath, model = args
     mudSplatObj = mudSplat(mudImgPath, xOffset, yOffset, scale, rotate)
-    return predictModelMudSplat(imgData, oriClass, tarClass, model,
-                                [mudSplatObj])[0]
+    return predictModel(imgData, oriClass, tarClass, model, [mudSplatObj])[0]
 
 '''
-For all images in same class - TurnLeft
+For all images obtained in Real World Experiment
 '''
-folder = "PSOoutput/TurnLeft/"
+folder = "PSOoutput"
+mudSplat1_exist = True
+mudSplat2_exist = True
+mudSplat3_exist = True
+addFog_exist = True
+addRain_exist = True
+
+
 for mudId, mudImgPath in enumerate(['../AdversaryImages/mudSplat2.png', '../AdversaryImages/mudSplat1.png']):
-    testTLimgs = np.zeros(np.append(len(x_turnLeft), x_turnLeft[0].shape))
-    for j, img in enumerate([x_turnLeft[0]]):
-        #testTLimgs = makeObservations(img)
-        testTLimgs = img
-        oriClass = 0
-        tarClass = 1
-        args = (np.uint8(testTLimgs), oriClass, tarClass, mudImgPath, model)
-        #feature = [<mudSplat1>, <mudSplat2>, <mudSplat3>, <rain>, <fog>]
-
-        ms1_lb  = [0, 0, 0, 0]
-        ms1_ub  = [0, 0, 0, 0]
-        ms2_lb  = [0, 0, 0, 0]
-        ms2_ub  = [0, 0, 0, 0]
-        ms3_lb  = [0, 0, 0, 0]
-        ms3_ub  = [0, 0, 0, 0]
-        '''
+    oriClass = 0
+    tarClass = 1
+    args = (x_realExp, oriClass, tarClass, mudImgPath, model)
+    # Pre-process features
+    fog_lb = [0, 0]
+    rain_lb = [0, 0, 0]
+    if mudSplat1_exist:
         ms1_lb  = [0.2*args[0][0].shape[0], 0.2*args[0][0].shape[1], 15, 0]
         ms1_ub  = [0.6*args[0][0].shape[0], 0.6*args[0][0].shape[1], 40, 360]
+    else:
+        ms1_lb  = [0, 0, 0, 0]
+        ms1_ub  = [0, 0, 0, 0]
+    if mudSplat2_exist:
         ms2_lb  = [0.2*args[0][0].shape[0], 0.2*args[0][0].shape[1], 15, 0]
         ms2_ub  = [0.6*args[0][0].shape[0], 0.6*args[0][0].shape[1], 30, 360]
+    else:
+        ms2_lb  = [0, 0, 0, 0]
+        ms2_ub  = [0, 0, 0, 0]
+    if mudSplat3_exist:
         ms3_lb  = [0.2*args[0][0].shape[0], 0.2*args[0][0].shape[1], 15, 0]
         ms3_ub  = [0.6*args[0][0].shape[0], 0.6*args[0][0].shape[1], 20, 360]
-        '''
-        rain_lb = [0, 0]
-        #rain_ub = [0, 0]
-        rain_ub = [(2**16)-1, 1]
-        fog_lb  = [0, 0]
-        #fog_ub  = [0, 0]
+    else:
+        ms3_lb  = [0, 0, 0, 0]
+        ms3_ub  = [0, 0, 0, 0]
+    if addFog_exist:
         fog_ub  = [0.5, (2**16)-1]
-        lb = ms1_lb + ms2_lb + ms3_lb + rain_lb + fog_lb
-        ub = ms1_ub + ms2_ub + ms3_ub + rain_ub + fog_ub
-        #q_opt, f_opt = pso(pso_objective, lb, ub, args=args,
-        #                   swarmsize=100, omega=0.8, phip=2.0, phig=2.0,
-        #                   maxiter=3000, minstep=1e-8, debug=True, processes=1)
-        q_opt, f_opt, f_hist = pso(pso_objective, lb, ub, args=args,
+    else:
+        fog_ub  = [0, 0]
+    if addRain_exist:
+        rain_ub = [(2**16)-1, 3, 1]
+    else:
+        rain_ub = [0, 0, 0]
+    
+    lb = ms1_lb + ms2_lb + ms3_lb + rain_lb + fog_lb
+    ub = ms1_ub + ms2_ub + ms3_ub + rain_ub + fog_ub
+    
+    q_opt, f_opt, f_hist = pso(pso_objective, lb, ub, args=args,
                                     swarmsize=100, omega=0.8, phip=2.0, phig=2.0,
-                                    maxiter=300, minstep=1e-8, debug=True, abs_min=0)
-        print(q_opt)
-        print(f_opt)
-        print('Hooray!')
-        if not os.path.exists(folder+str(j)+'_'+str(mudId)+'/'):
-            os.makedirs(folder+str(j)+'_'+str(mudId)+'/')
-        fig = plt.figure()
-        plt.plot(f_hist)
-        plt.title('Model accuracy')
-        plt.ylabel('Global Minima')
-        plt.xlabel('Iteration')
-        plt.ylim(0, 25)
-        plt.legend(['Convergence Characteristics'], loc='upper right')
-        fig.savefig(folder + str(j) + '_' + str(mudId) + '/pso_convergence.png')
-        f = open("PSOoutput.txt", "a+")
-
-        f.write("For Turn Left Class (mudImgPath: " + mudImgPath + ") - image #" + str(j) + ":\n")
-        f.write("Original Accuracy: " + str(predictModel(testTLimgs, oriClass, tarClass, model)[2]) + "\n")
-        f.write("q_opt = " + str(q_opt) + "\n")
-        f.write("f_opt = " + str(f_opt) + "\n")
-        mudSplatObject1 = mudSplat(mudImgPath, int(q_opt[0]), int(q_opt[1]), q_opt[2], q_opt[3])
-        mudSplatObject2 = mudSplat(mudImgPath, int(q_opt[4]), int(q_opt[5]), q_opt[6], q_opt[7])
-        mudSplatObject3 = mudSplat(mudImgPath, int(q_opt[8]), int(q_opt[9]), q_opt[10], q_opt[11])
-        rainFeatures    = [int(q_opt[12]), np.ceil(q_opt[13])]
-        fogFeatures     = [q_opt[14], int(q_opt[15])]
-        allFeatures     = [[mudSplatObject1] + [mudSplatObject2] + [mudSplatObject3] + rainFeatures + fogFeatures]
-        f.write("New Accuracy: " + str(predictModel(testTLimgs, oriClass, tarClass, model, allFeatures, folder+str(j)+'_'+str(mudId)+'/')[2]) + "\n\n")
-        f.close()
+                                    maxiter=2, minstep=1e-8, debug=True, abs_min=0)
+    
+    print(q_opt)
+    print(f_opt)
+    print('Hooray!')
+    if not os.path.exists(folder+'/Mud'+str(mudId)+'/'):
+        os.makedirs(folder+'/Mud'+str(mudId)+'/')
+    fig = plt.figure()
+    plt.plot(f_hist)
+    plt.title('Model accuracy')
+    plt.ylabel('Global Minima')
+    plt.xlabel('Iteration')
+    plt.ylim(0, 25)
+    plt.legend(['Convergence Characteristics'], loc='upper right')
+    fig.savefig(folder + '/Mud' + str(mudId) + '/pso_convergence.png')
+    
+    f = open("PSOoutput.txt", "a+")
+    oriAccuracy = predictModel(x_realExp, oriClass, tarClass, model)[2]
+    f.write("For mudImgPath: " + mudImgPath + " :\n")
+    f.write("Original Accuracy: " + str(oriAccuracy) + "\n")
+    f.write("q_opt = " + str(q_opt) + "\n")
+    f.write("f_opt = " + str(f_opt) + "\n")
+    
+    mudSplatObject1 = mudSplat(mudImgPath, int(q_opt[0]), int(q_opt[1]), q_opt[2], q_opt[3])
+    mudSplatObject2 = mudSplat(mudImgPath, int(q_opt[4]), int(q_opt[5]), q_opt[6], q_opt[7])
+    mudSplatObject3 = mudSplat(mudImgPath, int(q_opt[8]), int(q_opt[9]), q_opt[10], q_opt[11])
+    fogFeatures     = [q_opt[12], int(q_opt[13])]
+    rainFeatures    = [int(q_opt[14]), int(q_opt[15]), np.ceil(q_opt[16])]
+    allFeatures     = [[mudSplatObject1] + [mudSplatObject2] + [mudSplatObject3] + fogFeatures + rainFeatures]
+    
+    predAccuracy = predictModel(x_realExp, oriClass, tarClass, model, allFeatures, folder+'/Mud'+str(mudId)+'/')[2]
+    f.write("New Accuracy: " + str(predAccuracy) + "\n\n")
+    f.close()
