@@ -341,9 +341,9 @@ def predictModel(originalImages, originalClass, targetClass,
         for i, image in enumerate(originalImages):
             finImages[i, ...] = addMultiSplats(image, alterFeatures[:3])
         if alterFeatures[3]>0:
-            finImages = addFog(finImages, alterFeatures[3], alterFeatures[4])
+            finImages = addFog(finImages, alterFeatures[3], int(alterFeatures[4]))
         if alterFeatures[7]>0:
-            finImages = addRain(finImages, alterFeatures[5], alterFeatures[6])
+            finImages = addRain(finImages, int(alterFeatures[5]), int(alterFeatures[6]))
         predOutput = model.predict(finImages)
     else:
         raise Exception('More than 1 alterFeatures provided.')

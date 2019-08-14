@@ -283,9 +283,9 @@ def predictModel_Nparticles(originalImages, originalClass, targetClass,
             for i, image in enumerate(originalImages):
                 finImages[(n*numImgs)+i, ...] = addMultiSplats(image, feature[:3])
             if feature[3]>0:
-                finImages[n*numImgs:(n+1)*numImgs, ...] = addFog(finImages, feature[3], feature[4])
+                finImages[n*numImgs:(n+1)*numImgs, ...] = addFog(finImages, feature[3], int(feature[4]))
             if feature[7]>0:
-                finImages[n*numImgs:(n+1)*numImgs, ...] = addRain(finImages, feature[5], feature[6])
+                finImages[n*numImgs:(n+1)*numImgs, ...] = addRain(finImages, int(feature[5]), int(feature[6]))
         print("Alteration process successfull. Proceeding to model predictions.")
         predOutput = model.predict(finImages)
 
