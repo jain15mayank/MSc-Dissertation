@@ -5,6 +5,7 @@ import cv2
 from utils_mudSlap import *
 from utils_naturalPerturbations import addFog, addRain
 from joblib import Parallel, delayed
+import time
 
 '''
 HELPER Functions
@@ -152,7 +153,7 @@ def makeObservations(imgList, mode='multi', farScale = 0.5, obliquePercentage = 
             i+=1
     return newImgList, increaseFactor
 
-def alterImages(imageList, alterFeatures = None, withRain = True):
+def alterImages(imageList, feature):
     """
     Given a feature vector of alterations (as described below), alters a set of
     images accordingly
@@ -176,51 +177,15 @@ def alterImages(imageList, alterFeatures = None, withRain = True):
         outImgs: np.ndarray (numImages, Width, Height, numChannels)
             The list of transformed output images with 'alterFeatures' effects
     """
-    if len(imageList.shape)==3:
-        imageList = np.expand_dims(imageList, axis=0)
-    numImgs = imageList.shape[0]
-    W = imageList.shape[1]
-    H = imageList.shape[2]
-    nCh = imageList.shape[3]
-    if alterFeatures is not None:
-        mudObj1  = alterFeatures[0]
-        mudObj2  = alterFeatures[1]
-        mudObj3  = alterFeatures[2]
-        rainSeed = alterFeatures[3]
-        rainExt  = alterFeatures[4]
-        fogInten = alterFeatures[5]
-        fogSeed  = alterFeatures[6]
-
-        if mudObj1.scale>0 and mudObj2.scale>0 and mudObj3.scale>0:
-            allSplatImg = combineSplats([mudObj1]+[mudObj2]+[mudObj3], W, H).astype('uint8')
-            allSplatImg[:,:,:-1][allSplatImg[:,:,:-1]==0] = 255
-            splatImgs = np.zeros(imageList.shape)
-            for i, image in enumerate(imageList):
-                splatImgs[i, ...] = addMudSplat(image, allSplatImg)
-        elif mudObj1.scale>0 and mudObj2.scale>0:
-            allSplatImg = combineSplats([mudObj1]+[mudObj2], W, H).astype('uint8')
-            allSplatImg[:,:,:-1][allSplatImg[:,:,:-1]==0] = 255
-            splatImgs = np.zeros(imageList.shape)
-            for i, image in enumerate(imageList):
-                splatImgs[i, ...] = addMudSplat(image, allSplatImg)
-        elif mudObj1.scale>0:
-            allSplatImg = combineSplats([mudObj1], W, H).astype('uint8')
-            allSplatImg[:,:,:-1][allSplatImg[:,:,:-1]==0] = 255
-            splatImgs = np.zeros(imageList.shape)
-            for i, image in enumerate(imageList):
-                splatImgs[i, ...] = addMudSplat(image, allSplatImg)
-        else:
-            splatImgs = deepcopy(imageList).astype("float64")
-        if np.ceil(rainExt)>0 and withRain and np.ceil(fogInten)>0:
-            outImgs = addRain(addFog(splatImgs, fogInten, int(fogSeed)), int(rainSeed))
-        elif np.ceil(rainExt)>0 and withRain:
-            outImgs = addRain(splatImgs, int(rainSeed))
-        elif np.ceil(fogInten)>0:
-            outImgs = addFog(splatImgs, fogInten, int(fogSeed))
-        else:
-            outImgs = splatImgs
-    else:
-        outImgs = imageList
+    '''
+    for i, image in enumerate(originalImages):
+        finImages[(n*numImgs)+i, ...] = addMultiSplats(image, feature[:3])
+    '''
+    outImgs = np.array(Parallel(n_jobs=numImgs)(delayed(addMultiSplats)(image, feature[:3]) for i,image in enumerate(imageList)))
+    if feature[3]>0:
+        outImgs = addFog(outImgs, feature[3], int(feature[4]))
+    if feature[7]>0:
+        outImgs = addRain(outImgs, int(feature[5]), int(feature[6]))
     return outImgs
 
 def predictModel_Nparticles(originalImages, originalClass, targetClass,
@@ -280,19 +245,25 @@ def predictModel_Nparticles(originalImages, originalClass, targetClass,
     else:
         numFinImages = numImgs*len(alterFeatures)
         finImages = np.zeros((numFinImages, W, H, nCh))
+        finImages = np.array(Parallel(n_jobs=40)(delayed(alterImages)(originalImages, feature) for n,feature in enumerate(alterFeatures)))
+        print(finImages.shape)
+        '''
         for n, feature in enumerate(alterFeatures):
-            '''
+            print("Adding Mud-Splats")
+            """
             for i, image in enumerate(originalImages):
                 finImages[(n*numImgs)+i, ...] = addMultiSplats(image, feature[:3])
-            '''
-            print("Adding Mud-Splats")
-            finImages = Parallel(n_jobs=numImgs)(delayed(addMultiSplats)(image, feature[:3]) for i,image in enumerate(originalImages))
+            """
+            finImages[n*numImgs:(n+1)*numImgs, ...] = np.array(Parallel(n_jobs=numImgs)(delayed(addMultiSplats)(image, feature[:3]) for i,image in enumerate(originalImages)))
+            print(t1-t0)
+            print(t2-t1)
             print("Adding Fog")
             if feature[3]>0:
                 finImages[n*numImgs:(n+1)*numImgs, ...] = addFog(finImages[n*numImgs:(n+1)*numImgs, ...], feature[3], int(feature[4]))
             print("Adding Rain")
             if feature[7]>0:
                 finImages[n*numImgs:(n+1)*numImgs, ...] = addRain(finImages[n*numImgs:(n+1)*numImgs, ...], int(feature[5]), int(feature[6]))
+        '''
         print("Alteration process successfull. Proceeding to model predictions.")
         predOutput = model.predict(finImages)
 
