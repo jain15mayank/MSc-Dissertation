@@ -469,7 +469,7 @@ for mudId, mudImgPath in enumerate(['../AdversaryImages/mudSplat2.png', '../Adve
     mudSplatObject3 = mudSplat(mudImgPath, int(q_opt[8]), int(q_opt[9]), q_opt[10], q_opt[11])
     fogFeatures     = [q_opt[12], int(q_opt[13])]
     rainFeatures    = [int(q_opt[14]), int(q_opt[15]), np.ceil(q_opt[16])]
-    allFeatures     = [mudSplatObject1 + mudSplatObject2 + mudSplatObject3 + fogFeatures + rainFeatures]
+    allFeatures     = [mudSplatObject1] + [mudSplatObject2] + [mudSplatObject3] + fogFeatures + rainFeatures
     
     predAccuracy = predictModel(x_realExp, oriClass, tarClass, model, allFeatures, folder+'/Mud'+str(mudId)+'/')[2]
     f.write("New Accuracy: " + str(predAccuracy) + "\n\n")
