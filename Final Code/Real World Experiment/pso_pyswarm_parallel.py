@@ -181,6 +181,7 @@ def alterImages(imageList, feature):
     for i, image in enumerate(originalImages):
         finImages[(n*numImgs)+i, ...] = addMultiSplats(image, feature[:3])
     '''
+    numImgs = imageList.shape[0]
     outImgs = np.array(Parallel(n_jobs=numImgs)(delayed(addMultiSplats)(image, feature[:3]) for i,image in enumerate(imageList)))
     if feature[3]>0:
         outImgs = addFog(outImgs, feature[3], int(feature[4]))
